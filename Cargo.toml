@@ -1,0 +1,18 @@
+[package]
+name = "pitot"
+version = "0.1.0"
+authors = ["Datong Sun <dndx@idndx.com>"]
+
+[dependencies]
+chrono = "0.3"
+log = "0.3.7"
+env_logger = "0.3"
+serial = "0.3.4"
+nom = "^3.0"
+time = "0.1"
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
+ws = "0.7.1"
+libc = "0.2.23"
+inotify = "0.4.1"
