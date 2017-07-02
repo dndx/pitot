@@ -10,6 +10,17 @@ of any flight they operate.
 The software is still under heavy development and may not be feature complete
 and may contain bugs. Use at your own risk.
 
+# Latest release
+## pitot-v0.0.1-alpha-debug.img.zip
+**sha256:** `08e15ce2c053a1a2fc6049cddaa6be6afe472cff0ca289f95f61c661abc37f05`
+
+**GPG signature:** [`pitot-v0.0.1-alpha-debug.img.zip.sig`](https://github.com/dndx/pitot/releases/download/v0.0.1-alpha/pitot-v0.0.1-alpha-debug.img.zip.sig)
+
+[Download Link](https://github.com/dndx/pitot/releases/download/v0.0.1-alpha/pitot-v0.0.1-alpha-debug.img.zip)
+
+All Pitot releases are signed using Datong's PGP key
+[CF7004EE981151C8](https://pgp.mit.edu/pks/lookup?op=get&search=0xCF7004EE981151C8).
+
 # Supported
 ## Motherboard
 * Raspberry Pi 3
@@ -65,6 +76,7 @@ necessary hardware for testing)
 
 # Getting started
 First, program your SD card using the [latest release image](https://github.com/dndx/pitot/releases).
+
 For Mac users, you may use [Pi Filler](http://ivanx.com/raspberrypi/). For Windows users, check out
 this [article](https://www.raspberrypi.org/documentation/installation/installing-images/windows.md)
 from Raspberry Pi Foundation.
