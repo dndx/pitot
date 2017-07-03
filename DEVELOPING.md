@@ -164,6 +164,9 @@ $ RUST_BACKTRACE=1 RUST_LOG=trace path/to/pitot
 The `RUST_LOG` parameter takes values from `trace` all the way up to `error`. Check out the
 documentation of [`env_logger`](https://doc.rust-lang.org/log/env_logger/) for more information.
 
+When running Pitot on your Raspberry Pi build as system service, you may run `sudo journalctl -u pitot`
+to view logs. Note that logs are not persistent due to the fact that root file system is readonly.
+
 ## Running Pitot on your build
 Pitot can run it's tests perfectly fine on x86 machines, but for it to actually work in the cockpit,
 you need to make it run on your actual Pitot build. Here is how you do it:
