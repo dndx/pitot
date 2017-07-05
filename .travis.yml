@@ -1,0 +1,26 @@
+dist: trusty
+sudo: false
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+matrix:
+  allow_failures:
+    - rust: nightly
+addons:
+  apt:
+    packages:
+      - libusb-1.0-0-dev
+before_script:
+  - cd $HOME
+  - git clone https://github.com/steve-m/librtlsdr.git
+  - git clone https://github.com/dndx/dump1090.git
+  - git clone https://github.com/dndx/dump978.git
+  - export C_INCLUDE_PATH=$C_INCLUDE_PATH:$HOME/librtlsdr-build/include
+  - cd $HOME/librtlsdr && mkdir build && cd build && cmake ../ -DCMAKE_INSTALL_PREFIX=$HOME/librtlsdr-build && make -j2 && make install
+  - cd $HOME/dump1090 && git checkout libdump1090 && make -j2
+  - cd $HOME/dump978 && git checkout libdump978 && make -j2
+  - export LIBRARY_PATH=$LIBRARY_PATH:$HOME/librtlsdr-build/lib:$HOME/dump1090:$HOME/dump978
+  - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/librtlsdr-build/lib:$HOME/dump1090:$HOME/dump978
+  - cd $TRAVIS_BUILD_DIR
