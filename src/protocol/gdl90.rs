@@ -72,9 +72,10 @@ impl Protocol for GDL90 {
                 Report::Ownship(ref o) => {
                     if self.ownship_counter >= (handle.get_frequency() / OWNSHIP_FREQ) as u32 {
                         self.ownship_counter = 0;
+                        self.ownship_valid = o.valid;
+
                         handle.push_data(GDL90::generate_ownship(o));
                         handle.push_data(GDL90::generate_ownship_geometric_altitude(o));
-                        self.ownship_valid = o.valid;
                     }
                 }
                 Report::Traffic(ref o) => {
