@@ -308,7 +308,7 @@ fn icao_to_tail(icao: u32) -> Option<String> {
             if icao > 0xADF7C7 {
                 Some(String::from("US-MIL"))
             } else {
-                let mut res = String::with_capacity(5);
+                let mut res = String::with_capacity(6); // N12345
                 res.push('N');
 
                 let mut offset = icao - 0xA00001;
