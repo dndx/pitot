@@ -36,7 +36,8 @@ tested.
 If you have tested Pitot with your EFB and confirmed it is working, please
 open a Pull Request to update this list.
 
-* ForeFlight 9 (iOS)
+* ForeFlight 9 on iOS
+* Avare with Avare External IO on Android (confirmed by [@D35Bonanza](https://github.com/D35Bonanza))
 
 ## GNSS
 * U-blox over GPIO (such as RY83xAI)
