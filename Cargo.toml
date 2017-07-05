@@ -1,7 +1,12 @@
 [package]
 name = "pitot"
+description = "A customizable aviation information receiver"
 version = "0.0.1"
 authors = ["Datong Sun <dndx@idndx.com>"]
+homepage = "http://pitot-rs.org"
+repository = "https://github.com/dndx/pitot"
+readme = "README.md"
+license = "GPL-3.0"
 
 [dependencies]
 chrono = "0.3"
