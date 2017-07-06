@@ -508,7 +508,10 @@ impl UbloxGNSSProvider {
                 0x00, 0x00, 0x00, 0x00 // flags, padding
                 ];
                 let packet = UBXPacket::new(0x06, 0x00, payload);
-                p.write(&packet).expect("could not configure serial port");
+                if let Err(e) = p.write(&packet) {
+                    info!("serial port not responding, Ublox module is disabled: {:?}", e);
+                    return None;
+                }
 
                 // see https://github.com/dcuddeback/serial-rs/issues/43
                 // sleep 50ms to let RPi finishes transmitting
