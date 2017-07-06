@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/dndx/pitot.svg?branch=master)](https://travis-ci.org/dndx/pitot)
+[![Cargo Release](https://img.shields.io/crates/v/pitot.svg)](https://crates.io/crates/pitot)
+
 # Name
 Pitot - a customizable aviation information receiver
 
