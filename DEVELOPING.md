@@ -142,16 +142,16 @@ Pitot run slower. However, during the early stage of development, I recommend yo
 debug mode to help catching bugs and make Pitot better!
 
 ## Running tests
+```shell
+$ cargo test
+```
+
 Pitot has a test set that is still improving. We encourage you run Pitot on every change you make and
 of course to contribute tests for existing features and features you have developed. Having a good
 test is how we will ensure the consistent quality of Pitot as the project goes forward.
 
 If you have noticed and test failure on your machine, please open an issue with the output and we will
 be sure to take a look.
-
-```shell
-$ cargo test
-```
 
 ## Debugging Pitot
 Pitot can be debugged using GDB, Valgrind and the built in debug logs. To see the logs, run debug
@@ -232,3 +232,6 @@ I will try my best to take a look.
 * [GDL 90 Protocol Specification](https://www.faa.gov/nextgen/programs/adsb/Archival/media/GDL90_Public_ICD_RevA.PDF)
 * [Manual for the Universal Access Transceiver (UAT)](https://www.icao.int/safety/acp/Inactive%20working%20groups%20library/ACP-WG-C-UAT-2/UAT-SWG02-WP04%20-%20Draft%20Tech%20Manual%20V0-1%20.pdf)
 * [Surveillance and Broadcast Services Description](https://github.com/cyoung/stratux/raw/master/notes/SBS-Description-Doc_SRT_47_rev01_20111024.pdf)
+
+## GNSS
+* [u-blox 8 / u-blox M8 Receiver Description Including Protocol Specification](https://www.u-blox.com/sites/default/files/products/documents/u-blox8-M8_ReceiverDescrProtSpec_\(UBX-13003221\)_Public.pdf)
