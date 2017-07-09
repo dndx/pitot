@@ -20,6 +20,11 @@ macro_rules! mm_to_ft {
 }
 
 #[macro_export]
+macro_rules! mmps_to_kts {
+    ($x:expr) => (($x as f32) * 0.00194384_f32);
+}
+
+#[macro_export]
 macro_rules! run_every {
     ($hz:expr, $counter:expr, $handle:expr, $action:block) => {
         $counter += 1;

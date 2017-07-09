@@ -63,7 +63,7 @@ impl Processor for Ownship {
                     // here, but most EFB displays as MSL
                     self.altitude = mm_to_ft!(f.height_msl.0).round() as i32;
 
-                    self.gs = mm_to_ft!(f.gs.0);
+                    self.gs = mmps_to_kts!(f.gs.0);
                     self.track = f.true_course.0;
 
                     self.valid = true;
