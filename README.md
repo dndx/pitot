@@ -14,12 +14,10 @@ The software is still under heavy development and may not be feature complete
 and may contain bugs. Use at your own risk.
 
 # Latest release
-## pitot-v0.0.1-alpha-debug.img.zip
-**sha256:** `08e15ce2c053a1a2fc6049cddaa6be6afe472cff0ca289f95f61c661abc37f05`
+## pitot-v0.0.1-alpha1-debug.img.zip
+**sha256:** `a7151e5f69d6a0b6e567a8a137049cf744e9aacd884187f206c8c85ec73449fa`
 
-**GPG signature:** [`pitot-v0.0.1-alpha-debug.img.zip.sig`](https://github.com/dndx/pitot/releases/download/v0.0.1-alpha/pitot-v0.0.1-alpha-debug.img.zip.sig)
-
-[Download Link](https://github.com/dndx/pitot/releases/download/v0.0.1-alpha/pitot-v0.0.1-alpha-debug.img.zip)
+**Download Link:** https://github.com/dndx/pitot/releases/tag/v0.0.1-alpha1
 
 All Pitot releases are signed using Datong's PGP key
 [CF7004EE981151C8](https://pgp.mit.edu/pks/lookup?op=get&search=0xCF7004EE981151C8).
