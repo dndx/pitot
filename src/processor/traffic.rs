@@ -258,19 +258,8 @@ impl Processor for Traffic {
         run_every!(CLEANUP_FREQ, self.cleanup_counter, handle, {
             debug!("clean up traffic map");
 
-            // TODO: use retain() after 1.18 is released
-            let to_remove: Vec<u32> = self.situation
-                .iter()
-                .filter_map(|(k, v)| if (clock - v.last_seen).as_secs() >= MAX_STALE_SECS {
-                                Some(*k)
-                            } else {
-                                None
-                            })
-                .collect();
-
-            for k in to_remove {
-                self.situation.remove(&k).unwrap();
-            }
+            self.situation
+                .retain(|_, ref v| (clock - v.last_seen).as_secs() < MAX_STALE_SECS);
         });
 
         run_every!(REPORT_FREQ, self.report_counter, handle, {
