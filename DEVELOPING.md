@@ -202,10 +202,11 @@ $ sudo systemctl stop pitot
 
 and copy the new binary to overwrite `/usr/local/bin/pitot`.
 
-Next, very important, you need to give Pitot capability to change system time:
+Next, very important, you need to give Pitot capability to change system time
+and to use raw socket:
 
 ```shell
-$ sudo setcap CAP_SYS_TIME+ep /usr/local/bin/pitot
+$ sudo setcap CAP_SYS_TIME,CAP_NET_RAW+ep /usr/local/bin/pitot
 ```
 
 Once you are done, remove the addition from `/boot/cmdline.txt` and reboot.
