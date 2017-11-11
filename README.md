@@ -37,7 +37,7 @@ tested.
 If you have tested Pitot with your EFB and confirmed it is working, please
 open a Pull Request to update this list.
 
-* ForeFlight 9.2 on iOS ([Screenshot 1](https://user-images.githubusercontent.com/1131072/28495314-7c1fef4c-6efd-11e7-9dd2-3fdf6c10fd02.PNG),
+* ForeFlight 9 on iOS ([Screenshot 1](https://user-images.githubusercontent.com/1131072/28495314-7c1fef4c-6efd-11e7-9dd2-3fdf6c10fd02.PNG),
 [Screenshot 2](https://user-images.githubusercontent.com/1131072/28495315-7dddd81c-6efd-11e7-9eb8-e3dc514cb8e8.PNG))
 * Avare with Avare External IO on Android (confirmed by [@D35Bonanza](https://github.com/D35Bonanza))
 
@@ -63,9 +63,9 @@ necessary hardware for testing)
 ## Protocol/Transport
 * GDL90 over UDP
 * WebSocket (still under development)
+* GDL90 message buffering when device is sleeping or EFB is not active
 
 ### Planned
-* **High priority:** GDL90 message buffering when client is sleeping
 * **High priority:** Web interface or control App
 * **Low priority:** Serial output for EFIS integration
 
