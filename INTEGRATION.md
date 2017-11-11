@@ -57,6 +57,38 @@ are flying low on the altitude where the delta will not be significant anyway.
 I have also observed that Pitot seems to produce more accurate traffic sepration
 information than Stratux due to this decision.
 
+# Sleep and inactive detection
+Pitot will attempt to detect a client that is sleeping or not actively using the EFB app. If the
+client later become active again, the last 8192 FIS-B messages will be replayed to help the client
+catch up.
+
+Here is how it works:
+
+Every second, Pitot will send out ICMP Echo Request to all known client. If no ICMP Echo Reply
+has been received from a client for more than 3 seconds, that client is considered as *sleeping*.
+This is the sleep detection.
+
+Pitot always send all traffic and new FIS-B updates to all clients regardless of their state.
+If "Connection refused" error was detected, that client is considered as *not in app*.
+If no "Connection refused" was seen in the last 5 seconds, the client is considered as back *in app*.
+
+When transition from *sleeping* to *not sleeping* occurs, Pitot marks the client as *not in app*
+and resets the in app detection timer to present.
+
+When transition from *not in app* to *in app* occurs, the buffered FIS-B messages will be replayed.
+
+**Note:**
+1. The replay can only occur at most once every 30 seconds. This is to prevent a flapping device
+from consuming too much resources.
+2. Real time traffic and FIS-B updates are always being send to all clients regardless
+if their *in app* and *sleeping* states. This is to ensure that when switching into the App the latest
+information are always available immediately and to facilitate the *in app* detection.
+
+This design will work well with the following cases:
+* Client left the App open but turn off the screen.
+* Client left the App to another App or the SpringBoard.
+* Client left the App to another App or the SpringBoard and turned off the screen.
+
 # Problems
 If you have any questions while integrating Pitot, feel free to open a GitHub Issue
 and I will try my best to help.

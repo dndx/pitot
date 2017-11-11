@@ -28,6 +28,7 @@ extern crate serde_derive;
 extern crate ws;
 extern crate libc;
 extern crate inotify;
+extern crate icmp;
 
 #[macro_use]
 mod utils;
