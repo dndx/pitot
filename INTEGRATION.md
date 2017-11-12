@@ -65,12 +65,12 @@ catch up.
 Here is how it works:
 
 Every second, Pitot will send out ICMP Echo Request to all known client. If no ICMP Echo Reply
-has been received from a client for more than 10 seconds, that client is considered as *sleeping*.
+has been received from a client for more than 15 seconds, that client is considered as *sleeping*.
 This is the sleep detection.
 
 Pitot always send all traffic and new FIS-B updates to all clients regardless of their state.
 If "Connection refused" error was detected, that client is considered as *not in app*.
-If no "Connection refused" was seen in the last 5 seconds, the client is considered as back *in app*.
+If no "Connection refused" was seen in the last 30 seconds, the client is considered as back *in app*.
 
 When transition from *sleeping* to *not sleeping* occurs, Pitot marks the client as *not in app*
 and resets the in app detection timer to present.
