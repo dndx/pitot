@@ -30,6 +30,7 @@ const LEASE_FILE_PATH: &str = "/tmp/udhcpd.leases";
 const WATCH_PATH: &str = "/tmp";
 const GDL90_PORT: u16 = 4000;
 const UDP_MAX_SIZE: usize = 1472; // maximum UDP payload size without fragmentation in Ethernet environment
+const PAYLOAD_PER_DRAIN: usize = 512; // maximum queueable payload to drain per run
 const INACTIVE_BUFFER_SIZE: usize = 8192; // maximum number of messages to buffer and later reply back to sleeping clients
 const PING_PACKET: [u8; 13] = [
     0x08, 0x00, 0x25, 0xc9,
@@ -45,6 +46,7 @@ const REPLAY_INTERVAL: u64 = 30; // at mist 1 replay can be delivered to a clien
 struct Client {
     udp_sock: UdpSocket,
     icmp_sock: IcmpSocket,
+    queue: VecDeque<Payload>,
     active: bool,
     last_reply: Instant,
     in_app: bool,
@@ -55,7 +57,6 @@ struct Client {
 pub struct UDP {
     clients: HashMap<Ipv4Addr, Client>,
     inotify: Inotify,
-    queue: VecDeque<Payload>,
     inactive_buffer: VecDeque<Payload>,
     ping_counter: u32,
 }
@@ -103,7 +104,10 @@ impl Transport for UDP {
 
         for p in i {
             if p.queueable {
-                self.queue.push_back(p.clone());
+                for (_, c) in self.clients.iter_mut() {
+                    c.queue.push_back(p.clone());
+                }
+
                 self.inactive_buffer.push_front(p.clone());
                 continue;
             }
@@ -116,38 +120,15 @@ impl Transport for UDP {
             buffer.extend(p.payload.iter());
         }
 
-        self.inactive_buffer.truncate(INACTIVE_BUFFER_SIZE);
-
-        trace!("queue size: {}", self.queue.len());
-        // drain queue size * 1/freq of all queued items
-        let to_drain = ((1_f32 / handle.get_frequency() as f32) * self.queue.len() as f32)
-            .ceil() as usize;
-
-        for _ in 0..to_drain {
-            let p = self.queue.pop_front().unwrap();
-
-            if buffer.len() + p.payload.len() > UDP_MAX_SIZE {
-                self.send_to_all_clients(handle.get_clock(), &buffer);
-                buffer.clear();
-            }
-
-            buffer.extend(p.payload.iter());
-        }
-
-        // if buffer is not empty, and we still have space to squeeze, don't waste
-        // it as long as we do not introduce new packets
-        // otherwise, send the remaining packet
         if !buffer.is_empty() {
-            while !self.queue.is_empty() &&
-                  buffer.len() + self.queue.front().unwrap().payload.len() <= UDP_MAX_SIZE {
-                let item = self.queue.pop_front().unwrap(); // this can not fail
-
-                buffer.extend(item.payload.iter());
-            }
-
             self.send_to_all_clients(handle.get_clock(), &buffer);
-            buffer.clear();
         }
+
+        for (_, c) in self.clients.iter_mut() {
+            c.drain_queue();
+        }
+
+        self.inactive_buffer.truncate(INACTIVE_BUFFER_SIZE);
 
         run_every!(PING_FREQ, self.ping_counter, handle, {
             debug!("sending ping to all clients");
@@ -192,16 +173,7 @@ impl Transport for UDP {
             debug!("client {} came back online, replaying {} queued messages", ip, inactive_buffer_len);
 
             for p in self.inactive_buffer.iter().rev() {
-                if buffer.len() + p.payload.len() > UDP_MAX_SIZE {
-                    c.send_payload(&buffer);
-                    buffer.clear();
-                }
-
-                buffer.extend(p.payload.iter());
-            }
-
-            if !buffer.is_empty() {
-                c.send_payload(&buffer);
+                c.queue.push_back(p.clone());
             }
         }
     }
@@ -217,7 +189,6 @@ impl UDP {
         let mut me = Box::new(UDP {
                                   clients: HashMap::new(),
                                   inotify,
-                                  queue: VecDeque::new(),
                                   inactive_buffer: VecDeque::with_capacity(INACTIVE_BUFFER_SIZE),
                                   ping_counter: 0,
                               });
@@ -319,6 +290,7 @@ impl UDP {
                                 Client {
                                     udp_sock,
                                     icmp_sock,
+                                    queue: VecDeque::new(),
                                     active: true,
                                     last_reply: clock,
                                     in_app: false,
@@ -336,6 +308,36 @@ impl UDP {
 }
 
 impl Client {
+    fn drain_queue(&mut self) {
+        let mut buffer = Vec::with_capacity(UDP_MAX_SIZE);
+        let to_drain = PAYLOAD_PER_DRAIN.min(self.queue.len());
+
+        for _ in 0..to_drain {
+            let p = self.queue.pop_front().unwrap();
+
+            if buffer.len() + p.payload.len() > UDP_MAX_SIZE {
+                self.send_payload(&buffer);
+                buffer.clear();
+            }
+
+            buffer.extend(p.payload.iter());
+        }
+
+        // if buffer is not empty, and we still have space to squeeze, don't waste
+        // it as long as we do not introduce new packets
+        // otherwise, send the remaining packet
+        if !buffer.is_empty() {
+            while !self.queue.is_empty() &&
+                  buffer.len() + self.queue.front().unwrap().payload.len() <= UDP_MAX_SIZE {
+                let item = self.queue.pop_front().unwrap(); // this can not fail
+
+                buffer.extend(item.payload.iter());
+            }
+
+            self.send_payload(&buffer);
+        }
+    }
+
     fn send_payload(&self, buffer: &[u8]) {
         if let Err(e) = self.udp_sock.send(buffer) {
             if e.kind() == ErrorKind::WouldBlock {
