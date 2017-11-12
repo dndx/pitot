@@ -38,7 +38,7 @@ const PING_PACKET: [u8; 13] = [
     'P' as u8, 'I' as u8, 'T' as u8, 'O' as u8, 'T' as u8,
 ];
 const PING_FREQ: u32 = 1;
-const DEAD_THRESHOLD: u64 = 3; // if no ping response has been received in this much seconds, consider the client as inactive
+const DEAD_THRESHOLD: u64 = 10; // if no ping response has been received in this much seconds, consider the client as inactive
 const IN_APP_THRESHOLD: u64 = 5; // if no "connection refused" has been received in this much seconds, consider the client as back to the App
 const REPLAY_INTERVAL: u64 = 30; // at mist 1 replay can be delivered to a client in REPLAY_INTERVAL seconds
 

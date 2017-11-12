@@ -65,7 +65,7 @@ catch up.
 Here is how it works:
 
 Every second, Pitot will send out ICMP Echo Request to all known client. If no ICMP Echo Reply
-has been received from a client for more than 3 seconds, that client is considered as *sleeping*.
+has been received from a client for more than 10 seconds, that client is considered as *sleeping*.
 This is the sleep detection.
 
 Pitot always send all traffic and new FIS-B updates to all clients regardless of their state.
