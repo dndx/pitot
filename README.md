@@ -14,13 +14,13 @@ The software is still under heavy development and may not be feature complete
 and may contain bugs. Use at your own risk.
 
 # Latest release
-## pitot-v0.0.1-alpha1-debug.img.zip
-**sha256:** `a7151e5f69d6a0b6e567a8a137049cf744e9aacd884187f206c8c85ec73449fa`
+## pitot-v0.0.1-alpha2-debug.img.zip
+**Date released:** Nov 17, 2017
 
-**Download Link:** https://github.com/dndx/pitot/releases/tag/v0.0.1-alpha1
+**Download Link:** https://github.com/dndx/pitot/releases/tag/v0.0.1-alpha2
 
 All Pitot releases are signed using Datong's PGP key
-[CF7004EE981151C8](https://pgp.mit.edu/pks/lookup?op=get&search=0xCF7004EE981151C8).
+[1908AE626BFCE242](https://pgp.mit.edu/pks/lookup?op=get&search=0x1908AE626BFCE242).
 
 # Supported
 ## Motherboard
