@@ -149,7 +149,7 @@ borrowed from the Stratux project.
 # Copyright and License
 This project is licensed under the GPLv3 license.
 
-Copyright (C) 2018  Datong Sun (dndx@idndx.com)
+Copyright (C) 2017-2018  Datong Sun (dndx@idndx.com)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
