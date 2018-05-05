@@ -233,6 +233,7 @@ I will try my best to take a look.
 * [GDL 90 Protocol Specification](https://www.faa.gov/nextgen/programs/adsb/Archival/media/GDL90_Public_ICD_RevA.PDF)
 * [Manual for the Universal Access Transceiver (UAT)](https://www.icao.int/safety/acp/Inactive%20working%20groups%20library/ACP-WG-C-UAT-2/UAT-SWG02-WP04%20-%20Draft%20Tech%20Manual%20V0-1%20.pdf)
 * [Surveillance and Broadcast Services Description](https://github.com/cyoung/stratux/raw/master/notes/SBS-Description-Doc_SRT_47_rev01_20111024.pdf)
+* [ForeFlight GDL 90 Extended Specification](https://www.foreflight.com/connect/spec/)
 
 ## GNSS
 * [u-blox 8 / u-blox M8 Receiver Description Including Protocol Specification](https://www.u-blox.com/sites/default/files/products/documents/u-blox8-M8_ReceiverDescrProtSpec_\(UBX-13003221\)_Public.pdf)

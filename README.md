@@ -14,10 +14,10 @@ The software is still under heavy development and may not be feature complete
 and may contain bugs. Use at your own risk.
 
 # Latest release
-## pitot-v0.0.1-alpha2-debug.img.zip
-**Date released:** Nov 17, 2017
+## pitot-v0.0.1-alpha3-debug.img.zip
+**Date released:** May 5, 2018
 
-**Download Link:** https://github.com/dndx/pitot/releases/tag/v0.0.1-alpha2
+**Download Link:** https://github.com/dndx/pitot/releases/tag/v0.0.1-alpha3
 
 All Pitot releases are signed using Datong's PGP key
 [1908AE626BFCE242](https://pgp.mit.edu/pks/lookup?op=get&search=0x1908AE626BFCE242).
@@ -37,7 +37,7 @@ tested.
 If you have tested Pitot with your EFB and confirmed it is working, please
 open a Pull Request to update this list.
 
-* ForeFlight 9 on iOS ([Screenshot 1](https://user-images.githubusercontent.com/1131072/28495314-7c1fef4c-6efd-11e7-9dd2-3fdf6c10fd02.PNG),
+* ForeFlight 9, 10 on iOS ([Screenshot 1](https://user-images.githubusercontent.com/1131072/28495314-7c1fef4c-6efd-11e7-9dd2-3fdf6c10fd02.PNG),
 [Screenshot 2](https://user-images.githubusercontent.com/1131072/28495315-7dddd81c-6efd-11e7-9eb8-e3dc514cb8e8.PNG))
 * Avare with Avare External IO on Android (confirmed by [@D35Bonanza](https://github.com/D35Bonanza))
 
@@ -149,7 +149,7 @@ borrowed from the Stratux project.
 # Copyright and License
 This project is licensed under the GPLv3 license.
 
-Copyright (C) 2017  Datong Sun (dndx@idndx.com)
+Copyright (C) 2018  Datong Sun (dndx@idndx.com)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
