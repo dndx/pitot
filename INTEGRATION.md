@@ -25,13 +25,14 @@ guarantee strong ordering anyway). You should not rely
 on the ordering of message while processing Pitot's input.
 
 ## Messages Pitot generates
-| Message                       | Frequency    |
-| ----------------------------- | ------------ |
-| Heartbeat                     | 1 Hz         |
-| Ownship                       | 2 Hz         |
-| Ownship Geometric Altitude    | 2 Hz         |
-| Traffic                       | 1 Hz         |
-| Uplink Data (FIS-B)           | As available |
+| Message                                                           | Frequency    |
+| ----------------------------------------------------------------- | ------------ |
+| Heartbeat                                                         | 1 Hz         |
+| [ForeFlight ID](https://www.foreflight.com/connect/spec/)         | 1 Hz         |
+| Ownship                                                           | 2 Hz         |
+| Ownship Geometric Altitude                                        | 2 Hz         |
+| Traffic                                                           | 1 Hz         |
+| Uplink Data (FIS-B)                                               | As available |
 
 ## Discrepancies between Pitot and GDL 90 (and Stratux)
 GDL 90 was designed for panel installed ADS-B receiver, and thus have a very good source of
