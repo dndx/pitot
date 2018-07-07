@@ -14,16 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::{str, thread, time};
-use std::num::Wrapping;
-use std::io::{self, Read, Write};
-use std::time::Duration;
-use serial::{self, BaudRate, SerialPort, SystemPort};
-use nom::{shift, ErrorKind, IResult, le_i16, le_i32, le_i8, le_u16, le_u32, le_u8};
-use chrono::prelude::*;
 use super::*;
-use sensor::{Sensor, SensorData};
+use chrono::prelude::*;
+use nom::{le_i16, le_i32, le_i8, le_u16, le_u32, le_u8, shift, ErrorKind, IResult};
 use pitot::handle::Pushable;
+use sensor::{Sensor, SensorData};
+use serial::{self, BaudRate, SerialPort, SystemPort};
+use std::io::{self, Read, Write};
+use std::num::Wrapping;
+use std::time::Duration;
+use std::{str, thread, time};
 
 const SERIAL_PATH: [&str; 1] = ["/dev/ttyAMA0"];
 const BAUD_RATE: BaudRate = BaudRate::Baud38400;
@@ -152,7 +152,7 @@ impl UBXCommunicator {
 
         let mut n = 0;
 
-        while packet.class == 0x06 && packet.id != 0x00 && (packet.payload.len() > 0) {
+        while packet.class == 0x06 && packet.id != 0x00 && packet.payload.len() > 0 {
             // only wait for response if class is CFG and not reconfiguring ports
             // observation is that when CFG-PRT is sent, sometimes we do not even get
             // an ACK/NAK back, thus waiting on it is not really safe to do
@@ -206,8 +206,13 @@ named!(
     parse_ubx_message<UBXPacket>,
     map_res!(
         do_parse!(
-            take_until_and_consume!(&[0xB5_u8, 0x62][..]) >> class: le_u8 >> id: le_u8
-                >> len: le_u16 >> payload: take!(len) >> ck_a: le_u8 >> ck_b: le_u8
+            take_until_and_consume!(&[0xB5_u8, 0x62][..])
+                >> class: le_u8
+                >> id: le_u8
+                >> len: le_u16
+                >> payload: take!(len)
+                >> ck_a: le_u8
+                >> ck_b: le_u8
                 >> (class, id, payload, ck_a, ck_b)
         ),
         UBXPacket::new_from_parser
@@ -543,14 +548,27 @@ impl UbloxGNSSProvider {
                 // configure port
                 // first, set port baud rate
 
-                let payload = &[0x01, // portID
-                0x00, // reserved1
-                0x00, 0x00, // txReady
-                0xC0, 0x08, 0x00, 0x00, // mode (UART)
-                0x00, 0x96, 0x00, 0x00, // baudRate (38400)
-                0x01, 0x00, // inProtoMask (UBX only)
-                0x01, 0x00, // outProtoMask (UBX only)
-                0x00, 0x00, 0x00, 0x00 // flags, padding
+                let payload = &[
+                    0x01, // portID
+                    0x00, // reserved1
+                    0x00,
+                    0x00, // txReady
+                    0xC0,
+                    0x08,
+                    0x00,
+                    0x00, // mode (UART)
+                    0x00,
+                    0x96,
+                    0x00,
+                    0x00, // baudRate (38400)
+                    0x01,
+                    0x00, // inProtoMask (UBX only)
+                    0x01,
+                    0x00, // outProtoMask (UBX only)
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00, // flags, padding
                 ];
                 let packet = UBXPacket::new(0x06, 0x00, payload);
                 if let Err(e) = p.write(&packet) {
@@ -574,8 +592,12 @@ impl UbloxGNSSProvider {
 
                 // next, set update rate
                 let payload = &[
-                    0x64, 0x00, // measRate = 100ms
-                    0x01, 0x00, 0x01, 0x00 // navRate = 1, timeRef = 1 (GPS)
+                    0x64,
+                    0x00, // measRate = 100ms
+                    0x01,
+                    0x00,
+                    0x01,
+                    0x00, // navRate = 1, timeRef = 1 (GPS)
                 ];
                 let packet = UBXPacket::new(0x06, 0x08, payload);
                 p.write(&packet).expect("could not configure update rate");
@@ -600,7 +622,10 @@ impl UbloxGNSSProvider {
                             id: 0x04,
                             payload,
                         }) => {
-                            info!("ublox GPS detected, version string: {}", str::from_utf8(payload).unwrap());
+                            info!(
+                                "ublox GPS detected, version string: {}",
+                                str::from_utf8(payload).unwrap()
+                            );
                             // ROM BASE 2.01 (75331)FWVER=SPG 3.01PROTVER=18.00FIS=0xEF4015 (200030)
                             // GPS;GLO;GAL;BDSSBAS;IMES;QZSS
                             galileo_supported =
@@ -628,15 +653,68 @@ impl UbloxGNSSProvider {
                     }
                 }
 
-                let payload = &mut [ // see p. 164
-                    0x00, 0x00, 0xFF, 0x07, // numTrkChUse = numTrkChHw, numConfigBlocks = 7
-                    0x00, 0x08, 0x10, 0x00, 0x01, 0x00, 0x01, 0x00, // GPS = 8-16
-                    0x01, 0x02, 0x03, 0x00, 0x01, 0x00, 0x01, 0x00, // SBAS = 2-3
-                    0x02, 0x08, 0x0E, 0x00, 0x00, 0x00, 0x01, 0x00, // Galileo = 8-14, disabled
-                    0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, // Beidou = disabled
-                    0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, // IMES = disabled
-                    0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, // QZSS = disabled
-                    0x06, 0x08, 0x0E, 0x00, 0x01, 0x00, 0x01, 0x00, // Glonass = 8-14
+                let payload = &mut [
+                    // see p. 164
+                    0x00,
+                    0x00,
+                    0xFF,
+                    0x07, // numTrkChUse = numTrkChHw, numConfigBlocks = 7
+                    0x00,
+                    0x08,
+                    0x10,
+                    0x00,
+                    0x01,
+                    0x00,
+                    0x01,
+                    0x00, // GPS = 8-16
+                    0x01,
+                    0x02,
+                    0x03,
+                    0x00,
+                    0x01,
+                    0x00,
+                    0x01,
+                    0x00, // SBAS = 2-3
+                    0x02,
+                    0x08,
+                    0x0E,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x01,
+                    0x00, // Galileo = 8-14, disabled
+                    0x03,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x01,
+                    0x00, // Beidou = disabled
+                    0x04,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x01,
+                    0x00, // IMES = disabled
+                    0x05,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x01,
+                    0x00, // QZSS = disabled
+                    0x06,
+                    0x08,
+                    0x0E,
+                    0x00,
+                    0x01,
+                    0x00,
+                    0x01,
+                    0x00, // Glonass = 8-14
                 ];
 
                 if galileo_supported {
@@ -654,15 +732,29 @@ impl UbloxGNSSProvider {
                 p.write(&packet).expect("could not configure SBAS");
 
                 // next, enable message (per 1 solution)
-                let payload = &[0x01, 0x07, // NAV-PVT
-                0x00, 0x01, 0x00, 0x00, 0x00, 0x00 // DDC, UART1, res, USB, I2C, res
+                let payload = &[
+                    0x01,
+                    0x07, // NAV-PVT
+                    0x00,
+                    0x01,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00, // DDC, UART1, res, USB, I2C, res
                 ];
                 let packet = UBXPacket::new(0x06, 0x01, payload);
                 p.write(&packet).expect("could not enable PVT message");
 
                 // next, enable SAT (satellite status reporting per 10 solution)
-                let payload = &[0x01, 0x35, // NAV-SAT
-                0x00, 0x0A, 0x00, 0x00, 0x00, 0x00 // DDC, UART1, res, USB, I2C, res
+                let payload = &[
+                    0x01,
+                    0x35, // NAV-SAT
+                    0x00,
+                    0x0A,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00, // DDC, UART1, res, USB, I2C, res
                 ];
                 let packet = UBXPacket::new(0x06, 0x01, payload);
                 p.write(&packet).expect("could not enable SAT message");
@@ -774,7 +866,7 @@ mod tests {
         );
 
         let msg = [
-            0x00, 0x01, 0x02, 0xB5, 0x62, 0x0A, 0x04, 0x00, 0x00, 0x0E, 0x34
+            0x00, 0x01, 0x02, 0xB5, 0x62, 0x0A, 0x04, 0x00, 0x00, 0x0E, 0x34,
         ];
 
         assert_eq!(
