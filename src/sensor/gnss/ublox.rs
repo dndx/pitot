@@ -660,12 +660,12 @@ impl UbloxGNSSProvider {
                     0x07, // numTrkChUse = numTrkChHw, numConfigBlocks = 7
                     0x00,
                     0x08,
-                    0x10,
+                    0x20,
                     0x00,
                     0x01,
                     0x00,
                     0x01,
-                    0x00, // GPS = 8-16
+                    0x00, // GPS = 8-32
                     0x01,
                     0x02,
                     0x03,
