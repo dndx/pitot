@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use chrono::prelude::*;
 use nom::{le_i16, le_i32, le_i8, le_u16, le_u32, le_u8, shift, ErrorKind, IResult};
 use pitot::handle::Pushable;
 use sensor::{Sensor, SensorData};
