@@ -600,6 +600,7 @@ impl UbloxGNSSProvider {
                             id: 0x04,
                             payload,
                         }) => {
+                            info!("ublox GPS detected, version string: {:?}", payload);
                             // ROM BASE 2.01 (75331)FWVER=SPG 3.01PROTVER=18.00FIS=0xEF4015 (200030)
                             // GPS;GLO;GAL;BDSSBAS;IMES;QZSS
                             galileo_supported =
@@ -611,18 +612,37 @@ impl UbloxGNSSProvider {
                     }
                 }
 
+                let packet = UBXPacket::new(0x06, 0x3E, &[]);
+                p.write(&packet).expect("could not pull GNSS configuration");
+                loop {
+                    match p.next() {
+                        Ok(UBXPacket {
+                            class: 0x06,
+                            id: 0x3E,
+                            payload,
+                        }) => {
+                            info!("hardware tracking channels available: {:?}", payload[1]);
+                            break;
+                        }
+                        _ => {}
+                    }
+                }
+
                 let payload = &mut [ // see p. 164
-                    0x00, 0x00, 0xFF, 0x06, // numTrkChUse = numTrkChHw, numConfigBlocks = 6
+                    0x00, 0x00, 0xFF, 0x07, // numTrkChUse = numTrkChHw, numConfigBlocks = 7
                     0x00, 0x08, 0x10, 0x00, 0x01, 0x00, 0x01, 0x00, // GPS = 8-16
-                    0x01, 0x02, 0x03, 0x00, 0x01, 0x00, 0x01, 0x00, // WAAS = 2-3
+                    0x01, 0x02, 0x03, 0x00, 0x01, 0x00, 0x01, 0x00, // SBAS = 2-3
+                    0x02, 0x08, 0x0E, 0x00, 0x00, 0x00, 0x01, 0x00, // Galileo = 8-14, disabled
                     0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, // Beidou = disabled
+                    0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, // IMES = disabled
                     0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, // QZSS = disabled
                     0x06, 0x08, 0x0E, 0x00, 0x01, 0x00, 0x01, 0x00, // Glonass = 8-14
-                    0x02, 0x04, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, // Galileo = 4-4, disabled
                 ];
+
                 if galileo_supported {
-                    payload[48] = 0x01;
+                    payload[24] = 0x01;
                 }
+
                 let packet = UBXPacket::new(0x06, 0x3E, payload);
                 p.write(&packet).expect("could not configure GNSS");
 
@@ -639,9 +659,9 @@ impl UbloxGNSSProvider {
                 let packet = UBXPacket::new(0x06, 0x01, payload);
                 p.write(&packet).expect("could not enable PVT message");
 
-                // next, enable SAT (satellite status reporting per 5 solution)
+                // next, enable SAT (satellite status reporting per 10 solution)
                 let payload = &[0x01, 0x35, // NAV-SAT
-                0x00, 0x05, 0x00, 0x00, 0x00, 0x00 // DDC, UART1, res, USB, I2C, res
+                0x00, 0x0A, 0x00, 0x00, 0x00, 0x00 // DDC, UART1, res, USB, I2C, res
                 ];
                 let packet = UBXPacket::new(0x06, 0x01, payload);
                 p.write(&packet).expect("could not enable SAT message");
