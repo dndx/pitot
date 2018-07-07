@@ -600,7 +600,7 @@ impl UbloxGNSSProvider {
                             id: 0x04,
                             payload,
                         }) => {
-                            info!("ublox GPS detected, version string: {:?}", payload);
+                            info!("ublox GPS detected, version string: {}", str::from_utf8(payload).unwrap());
                             // ROM BASE 2.01 (75331)FWVER=SPG 3.01PROTVER=18.00FIS=0xEF4015 (200030)
                             // GPS;GLO;GAL;BDSSBAS;IMES;QZSS
                             galileo_supported =
@@ -621,7 +621,7 @@ impl UbloxGNSSProvider {
                             id: 0x3E,
                             payload,
                         }) => {
-                            info!("hardware tracking channels available: {:?}", payload[1]);
+                            info!("hardware tracking channels available: {}", payload[1]);
                             break;
                         }
                         _ => {}
