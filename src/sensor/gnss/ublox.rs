@@ -605,7 +605,7 @@ impl UbloxGNSSProvider {
                             // GPS;GLO;GAL;BDSSBAS;IMES;QZSS
                             galileo_supported =
                                 str::from_utf8(&payload[40..]).unwrap().contains(";GAL;");
-                            info!("chip supports Galileo");
+
                             break;
                         }
                         _ => {}
@@ -641,6 +641,7 @@ impl UbloxGNSSProvider {
 
                 if galileo_supported {
                     payload[24] = 0x01;
+                    info!("chip supports Galileo");
                 }
 
                 let packet = UBXPacket::new(0x06, 0x3E, payload);
