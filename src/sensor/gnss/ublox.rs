@@ -152,7 +152,7 @@ impl UBXCommunicator {
 
         let mut n = 0;
 
-        while packet.class == 0x06 && packet.id != 0x00 {
+        while packet.class == 0x06 && packet.id != 0x00 && (packet.payload.len() > 0) {
             // only wait for response if class is CFG and not reconfiguring ports
             // observation is that when CFG-PRT is sent, sometimes we do not even get
             // an ACK/NAK back, thus waiting on it is not really safe to do
@@ -167,7 +167,7 @@ impl UBXCommunicator {
                 }
                 Ok(UBXPacket {
                     class: 0x05,
-                    id: 0x02,
+                    id: 0x00,
                     payload,
                 }) if payload == &[packet.class, packet.id] =>
                 {
