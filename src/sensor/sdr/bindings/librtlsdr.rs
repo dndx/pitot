@@ -21,19 +21,20 @@
 //! This module requires your system to have `librtlsdr` available for linking.
 //! Go to https://github.com/steve-m/librtlsdr if you need to install.
 
-use std::ptr;
 use std::io::{self, Read};
+use std::ptr;
 
 enum RtlSDRDevT {}
 
 #[link(name = "rtlsdr")]
 extern "C" {
     fn rtlsdr_get_device_count() -> u32;
-    fn rtlsdr_get_device_usb_strings(index: u32,
-                                     manufact: *mut u8,
-                                     product: *mut u8,
-                                     serial: *mut u8)
-                                     -> i32;
+    fn rtlsdr_get_device_usb_strings(
+        index: u32,
+        manufact: *mut u8,
+        product: *mut u8,
+        serial: *mut u8,
+    ) -> i32;
     fn rtlsdr_open(dev: *mut *const RtlSDRDevT, index: u32) -> i32;
     fn rtlsdr_close(dev: *const RtlSDRDevT) -> i32;
     fn rtlsdr_set_tuner_gain_mode(dev: *const RtlSDRDevT, manual: i32) -> i32;
@@ -226,12 +227,15 @@ impl Read for Device {
                 }
                 -7 => {
                     // LIBUSB_ERROR_TIMEOUT
-                    Err(io::Error::new(io::ErrorKind::TimedOut,
-                                       "no more data to read at this moment"))
+                    Err(io::Error::new(
+                        io::ErrorKind::TimedOut,
+                        "no more data to read at this moment",
+                    ))
                 }
-                code => {
-                    Err(io::Error::new(io::ErrorKind::Other, format!("libusb error: {}", code)))
-                }
+                code => Err(io::Error::new(
+                    io::ErrorKind::Other,
+                    format!("libusb error: {}", code),
+                )),
             }
         }
     }
@@ -256,18 +260,21 @@ pub fn get_device_info(index: u32) -> Option<HWInfo> {
     let mut serial = vec![0; 256];
 
     unsafe {
-        if rtlsdr_get_device_usb_strings(index,
-                                         manufact.as_mut_ptr(),
-                                         product.as_mut_ptr(),
-                                         serial.as_mut_ptr()) != 0 {
+        if rtlsdr_get_device_usb_strings(
+            index,
+            manufact.as_mut_ptr(),
+            product.as_mut_ptr(),
+            serial.as_mut_ptr(),
+        ) != 0
+        {
             None
         } else {
             Some(HWInfo {
-                     index,
-                     manufact: String::from_utf8(manufact).unwrap(),
-                     product: String::from_utf8(product).unwrap(),
-                     serial: String::from_utf8(serial).unwrap(),
-                 })
+                index,
+                manufact: String::from_utf8(manufact).unwrap(),
+                product: String::from_utf8(product).unwrap(),
+                serial: String::from_utf8(serial).unwrap(),
+            })
         }
     }
 }

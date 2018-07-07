@@ -14,17 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::collections::{HashSet, HashMap};
-use std::net::{UdpSocket, Ipv4Addr, IpAddr};
-use std::io::{self, ErrorKind, Read};
-use std::fs::File;
-use std::collections::VecDeque;
-use std::time::{Duration, Instant};
-use time::{Timespec, Tm, now_utc};
-use nom::{IResult, be_u8, be_u32, be_u64};
-use inotify::{Inotify, watch_mask};
-use icmp::IcmpSocket;
 use super::*;
+use icmp::IcmpSocket;
+use inotify::{watch_mask, Inotify};
+use nom::{be_u32, be_u64, be_u8, IResult};
+use std::collections::VecDeque;
+use std::collections::{HashMap, HashSet};
+use std::fs::File;
+use std::io::{self, ErrorKind, Read};
+use std::net::{IpAddr, Ipv4Addr, UdpSocket};
+use std::time::{Duration, Instant};
+use time::{now_utc, Timespec, Tm};
 
 const LEASE_FILE_PATH: &str = "/tmp/udhcpd.leases";
 const WATCH_PATH: &str = "/tmp";
@@ -33,15 +33,24 @@ const UDP_MAX_SIZE: usize = 1472; // maximum UDP payload size without fragmentat
 const PAYLOAD_PER_DRAIN: usize = 256; // maximum queueable payload to drain per run
 const INACTIVE_BUFFER_SIZE: usize = 8192; // maximum number of messages to buffer and later reply back to sleeping clients
 const PING_PACKET: [u8; 13] = [
-    0x08, 0x00, 0x25, 0xc9,
-    0xd9, 0x9d, // identifier magic
-    0x00, 0x00, // sequence number
-    'P' as u8, 'I' as u8, 'T' as u8, 'O' as u8, 'T' as u8,
+    0x08,
+    0x00,
+    0x25,
+    0xc9,
+    0xd9,
+    0x9d, // identifier magic
+    0x00,
+    0x00, // sequence number
+    'P' as u8,
+    'I' as u8,
+    'T' as u8,
+    'O' as u8,
+    'T' as u8,
 ];
 const PING_FREQ: u32 = 1;
 const DEAD_THRESHOLD: u64 = 15; // if no ping response has been received in this much seconds, consider the client as inactive
 const IN_APP_THRESHOLD: u64 = 30; // if no "connection refused" has been received in this much seconds, consider the client as back to the App
-// IN_APP_THRESHOLD should be >= than DEAD_THRESHOLD
+                                  // IN_APP_THRESHOLD should be >= than DEAD_THRESHOLD
 const REPLAY_INTERVAL: u64 = 30; // at mist 1 replay can be delivered to a client in REPLAY_INTERVAL seconds
 
 struct Client {
@@ -171,7 +180,10 @@ impl Transport for UDP {
 
             c.last_replay = handle.get_clock();
 
-            debug!("client {} came back online, replaying {} queued messages", ip, inactive_buffer_len);
+            debug!(
+                "client {} came back online, replaying {} queued messages",
+                ip, inactive_buffer_len
+            );
 
             for p in self.inactive_buffer.iter().rev() {
                 c.queue.push_back(p.clone());
@@ -188,11 +200,11 @@ impl UDP {
             .unwrap();
 
         let mut me = Box::new(UDP {
-                                  clients: HashMap::new(),
-                                  inotify,
-                                  inactive_buffer: VecDeque::with_capacity(INACTIVE_BUFFER_SIZE),
-                                  ping_counter: 0,
-                              });
+            clients: HashMap::new(),
+            inotify,
+            inactive_buffer: VecDeque::with_capacity(INACTIVE_BUFFER_SIZE),
+            ping_counter: 0,
+        });
 
         if let Err(e) = me.update_clients_list(now_utc(), Instant::now()) {
             debug!("unable to update client list: {}", e);
@@ -252,18 +264,20 @@ impl UDP {
 
         if buf.len() > 0 {
             if let IResult::Done(_, mut alive) =
-                parse_ip_from_lease_file(&buf[..], utc.to_timespec(), (buf.len() - 8) / 36) {
+                parse_ip_from_lease_file(&buf[..], utc.to_timespec(), (buf.len() - 8) / 36)
+            {
                 debug!("found client IP(s) {:?} from lease file", alive);
 
-                self.clients
-                    .retain(|k, _| if alive.contains(k) {
-                                // keep sending
-                                alive.remove(k);
-                                true
-                            } else {
+                self.clients.retain(|k, _| {
+                    if alive.contains(k) {
+                        // keep sending
+                        alive.remove(k);
+                        true
+                    } else {
                         info!("removing client: {}", k);
                         false
-                    });
+                    }
+                });
 
                 // here, we are left with IPs that are not in self.clients yet
                 for ip in alive {
@@ -276,8 +290,8 @@ impl UDP {
                         continue;
                     }
 
-                    let icmp_sock = IcmpSocket::connect(ip.into())
-                        .expect("could not connect to ICMP socket");
+                    let icmp_sock =
+                        IcmpSocket::connect(ip.into()).expect("could not connect to ICMP socket");
 
                     icmp_sock
                         .set_write_timeout(Some(Duration::new(0, 1))) // TODO, fix this once we have real nonblocking mode
@@ -286,18 +300,19 @@ impl UDP {
                         .set_read_timeout(Some(Duration::new(0, 1))) // TODO, fix this once we have real nonblocking mode
                         .unwrap();
 
-                    self.clients
-                        .insert(ip,
-                                Client {
-                                    udp_sock,
-                                    icmp_sock,
-                                    queue: VecDeque::new(),
-                                    active: true,
-                                    last_reply: clock,
-                                    in_app: false,
-                                    last_refused: clock,
-                                    last_replay: clock,
-                                });
+                    self.clients.insert(
+                        ip,
+                        Client {
+                            udp_sock,
+                            icmp_sock,
+                            queue: VecDeque::new(),
+                            active: true,
+                            last_reply: clock,
+                            in_app: false,
+                            last_refused: clock,
+                            last_replay: clock,
+                        },
+                    );
 
                     info!("new client: {}", ip);
                 }
@@ -328,8 +343,9 @@ impl Client {
         // it as long as we do not introduce new packets
         // otherwise, send the remaining packet
         if !buffer.is_empty() {
-            while !self.queue.is_empty() &&
-                  buffer.len() + self.queue.front().unwrap().payload.len() <= UDP_MAX_SIZE {
+            while !self.queue.is_empty()
+                && buffer.len() + self.queue.front().unwrap().payload.len() <= UDP_MAX_SIZE
+            {
                 let item = self.queue.pop_front().unwrap(); // this can not fail
 
                 buffer.extend(item.payload.iter());

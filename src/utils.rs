@@ -16,12 +16,16 @@
 
 #[macro_export]
 macro_rules! mm_to_ft {
-    ($x:expr) => (($x as f32) * 0.00328084_f32);
+    ($x:expr) => {
+        ($x as f32) * 0.00328084_f32
+    };
 }
 
 #[macro_export]
 macro_rules! mmps_to_kts {
-    ($x:expr) => (($x as f32) * 0.00194384_f32);
+    ($x:expr) => {
+        ($x as f32) * 0.00194384_f32
+    };
 }
 
 #[macro_export]
@@ -32,5 +36,5 @@ macro_rules! run_every {
             $counter = 0;
             $action;
         }
-    }
+    };
 }

@@ -15,10 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 pub mod bindings;
-pub mod uat;
 pub mod es;
+pub mod uat;
 
-use processor::traffic::{AddressType, SpeedType, AltitudeType, HeadingType, TrafficSource};
+use processor::traffic::{AddressType, AltitudeType, HeadingType, SpeedType, TrafficSource};
 
 #[derive(Debug, PartialEq)]
 pub struct TrafficData {

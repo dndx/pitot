@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::thread::{spawn, JoinHandle};
+use super::bindings::libdump1090::Dump1090;
+use super::bindings::librtlsdr::{get_device_count, get_device_info, Device, HWInfo};
+use super::*;
+use pitot::handle::Pushable;
+use sensor::{Sensor, SensorData};
 use std::io::{self, Read};
 use std::sync::mpsc::{channel, Receiver};
-use super::bindings::librtlsdr::{get_device_count, get_device_info, Device, HWInfo};
-use sensor::{Sensor, SensorData};
-use pitot::handle::Pushable;
-use super::bindings::libdump1090::Dump1090;
-use super::*;
+use std::thread::{spawn, JoinHandle};
 
 const TUNER_GAIN: i32 = 480;
 const SAMPLE_RATE: i32 = 2400000;
@@ -52,7 +52,6 @@ impl ES {
                     .unwrap()
                     .reset_buffer()
                     .unwrap();
-
 
                 info!("1090ES initialization successful");
 
@@ -94,9 +93,9 @@ impl ES {
                 });
 
                 return Some(ES {
-                                _handle: handle,
-                                rx,
-                            });
+                    _handle: handle,
+                    rx,
+                });
             }
         }
 

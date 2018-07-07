@@ -14,10 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::ptr;
-use std::slice::from_raw_parts;
 use std::collections::VecDeque;
 use std::os::raw::c_void;
+use std::ptr;
+use std::slice::from_raw_parts;
 
 const ADS_B_SHORT: i32 = 1;
 const ADS_B_LONG: i32 = 2;
@@ -56,13 +56,11 @@ pub struct Dump978 {
 
 #[link(name = "dump978")]
 extern "C" {
-    fn dump978_init(ctx: *mut *const Dump978T,
-                    cb: extern "C" fn(inst: *mut c_void,
-                                      frame_type: i32,
-                                      payload: *const u8,
-                                      rs: i32),
-                    data: *const c_void)
-                    -> i32;
+    fn dump978_init(
+        ctx: *mut *const Dump978T,
+        cb: extern "C" fn(inst: *mut c_void, frame_type: i32, payload: *const u8, rs: i32),
+        data: *const c_void,
+    ) -> i32;
     fn dump978_destroy(ctx: *const Dump978T) -> i32;
     fn dump978_process(ctx: *const Dump978T, data: *mut u8, len: usize) -> Move;
 }
@@ -72,9 +70,9 @@ impl Dump978 {
         // this has to be boxed to get the address of self for callback
         // now
         let mut me = Box::new(Self {
-                                  ctx: ptr::null(),
-                                  parsed: VecDeque::new(),
-                              });
+            ctx: ptr::null(),
+            parsed: VecDeque::new(),
+        });
 
         unsafe {
             if dump978_init(&mut me.ctx, callback, &*me as *const _ as *const c_void) != 0 {

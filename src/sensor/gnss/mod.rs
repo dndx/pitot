@@ -19,7 +19,7 @@ use chrono::prelude::*;
 mod fake;
 pub mod ublox;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Copy, Clone, Serialize)]
 pub enum Constellation {
     GPS,
     SBAS,
@@ -28,7 +28,7 @@ pub enum Constellation {
     Unknown,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Copy, Clone, Serialize)]
 pub enum FixQuality {
     TwoDim,
     ThreeDim,
@@ -63,7 +63,7 @@ pub struct Fix {
     pub mag_dec: OptionalReading<f32, f32>,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Copy, Clone, Serialize)]
 pub struct SVStatus {
     /// Constellation this satellite belongs
     system: Constellation,

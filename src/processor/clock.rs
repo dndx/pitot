@@ -17,8 +17,8 @@
 //! Watches GNSS time (if valid) and set system (wall) clock if it gets too far off.
 
 use super::*;
-use sensor::gnss::GNSSData;
 use libc::{clock_settime, timespec, CLOCK_REALTIME};
+use sensor::gnss::GNSSData;
 
 // max 3 second tolerance
 const MAX_TOLERANCE: i64 = 2;
@@ -36,7 +36,9 @@ impl Processor for Clock {
     fn run(&mut self, handle: &mut Pushable<Report>, i: ChainedIter) {
         for e in i {
             match *e {
-                SensorData::GNSS(GNSSData::TimeFix { time: Some(ref f), .. }) => {
+                SensorData::GNSS(GNSSData::TimeFix {
+                    time: Some(ref f), ..
+                }) => {
                     if (handle.get_utc().to_timespec().sec - f.timestamp()).abs() > MAX_TOLERANCE {
                         info!("setting system clock");
 
@@ -62,7 +64,9 @@ impl Processor for Clock {
     fn run(&mut self, handle: &mut Pushable<Report>, i: ChainedIter) {
         for e in i {
             match *e {
-                SensorData::GNSS(GNSSData::TimeFix { time: Some(ref f), .. }) => {
+                SensorData::GNSS(GNSSData::TimeFix {
+                    time: Some(ref f), ..
+                }) => {
                     if (handle.get_utc().to_timespec().sec - f.timestamp()).abs() > MAX_TOLERANCE {
                         info!("setting system clock");
 

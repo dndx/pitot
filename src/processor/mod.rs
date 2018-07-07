@@ -14,13 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-pub mod ownship;
 pub mod clock;
-pub mod traffic;
 pub mod fisb;
+pub mod gnss;
+pub mod ownship;
+pub mod traffic;
 
-use sensor::SensorData;
 use pitot::handle::Pushable;
+use sensor::SensorData;
 use std::iter::Chain;
 use std::slice::Iter;
 
@@ -29,6 +30,7 @@ pub enum Report {
     Ownship(ownship::Ownship),
     Traffic(traffic::Target),
     FISB(fisb::FISBData),
+    GNSS(gnss::GNSS),
 }
 
 type ChainedIter<'a> = Chain<Iter<'a, SensorData>, Iter<'a, SensorData>>;

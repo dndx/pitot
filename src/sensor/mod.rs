@@ -19,8 +19,8 @@ pub mod sdr;
 
 use self::sdr::TrafficData;
 
-use pitot::handle::Pushable;
 use self::gnss::GNSSData;
+use pitot::handle::Pushable;
 use processor::fisb::FISBData;
 
 #[derive(PartialEq, Debug)]
