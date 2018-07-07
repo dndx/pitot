@@ -15,12 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use time::Tm;
-use std::time::Instant;
-use processor::Report;
-use processor::ownship::Ownship;
 use processor::fisb::FISBData;
+use processor::ownship::Ownship;
 use processor::traffic::*;
+use processor::Report;
+use std::time::Instant;
+use time::Tm;
 
 const LON_LAT_RESOLUTION: f32 = 180.0 / 8388608.0; // 2^23 (p. 19)
 const TRACK_RESOLUTION: f32 = 360.0 / 256.0;
@@ -82,6 +82,7 @@ impl Protocol for GDL90 {
                     handle.push_data(GDL90::generate_traffic(o, clock));
                 }
                 Report::FISB(ref o) => handle.push_data(GDL90::generate_uplink(o)),
+                _ => {}
             }
         }
 

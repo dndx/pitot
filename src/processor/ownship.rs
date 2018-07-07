@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use sensor::SensorData;
 use sensor::gnss::GNSSData;
+use sensor::SensorData;
 
 #[derive(PartialEq, Debug, Default, Copy, Clone, Serialize)]
 pub struct Ownship {
@@ -40,7 +40,9 @@ impl Processor for Ownship {
     fn run(&mut self, handle: &mut Pushable<Report>, i: ChainedIter) {
         for e in i {
             match *e {
-                SensorData::GNSS(GNSSData::TimeFix { fix: Some(ref f), .. }) => {
+                SensorData::GNSS(GNSSData::TimeFix {
+                    fix: Some(ref f), ..
+                }) => {
                     if let Some(acc) = f.lat_lon.1 {
                         self.nic = 9;
                         self.nacp = match acc as f32 / 1000_f32 {

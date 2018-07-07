@@ -14,28 +14,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use chrono::prelude::*;
 use super::*;
-use sensor::{Sensor, SensorData};
 use pitot::handle::Pushable;
+use sensor::{Sensor, SensorData};
 
 struct FakeGNSSProvider {}
 
 impl Sensor for FakeGNSSProvider {
     fn run(&mut self, h: &mut Pushable<SensorData>) {
         let fix = SensorData::GNSS(GNSSData::TimeFix {
-                                       time: Some(UTC.ymd(2014, 7, 8).and_hms(9, 10, 11)),
-                                       fix: Some(Fix {
-                                                     lat_lon: ((12345_f32, 12345_f32), Some(1000)),
-                                                     height_msl: (1000, Some(500)),
-                                                     height_ellipsoid: Some((900, Some(500))),
-                                                     gs: (10000, Some(100)),
-                                                     true_course: (123_f32, Some(2_f32)),
-                                                     quality: FixQuality::ThreeDim,
-                                                     num_sv: 4,
-                                                     mag_dec: Some((10_f32, Some(4_f32))),
-                                                 }),
-                                   });
+            time: Some(UTC.ymd(2014, 7, 8).and_hms(9, 10, 11)),
+            fix: Some(Fix {
+                lat_lon: ((12345_f32, 12345_f32), Some(1000)),
+                height_msl: (1000, Some(500)),
+                height_ellipsoid: Some((900, Some(500))),
+                gs: (10000, Some(100)),
+                true_course: (123_f32, Some(2_f32)),
+                quality: FixQuality::ThreeDim,
+                num_sv: 4,
+                mag_dec: Some((10_f32, Some(4_f32))),
+            }),
+        });
 
         h.push_data(fix);
     }
@@ -50,7 +49,7 @@ impl FakeGNSSProvider {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pitot::handle::{PushableHandle, BasicHandle};
+    use pitot::handle::{BasicHandle, PushableHandle};
     use std::collections::VecDeque;
 
     #[test]
@@ -65,21 +64,22 @@ mod tests {
                 p.run(&mut h);
             }
 
-            assert_eq!(q[i],
-                       SensorData::GNSS(GNSSData::TimeFix {
-                                            time: Some(UTC.ymd(2014, 7, 8).and_hms(9, 10, 11)),
-                                            fix: Some(Fix {
-                                                          lat_lon: ((12345_f32, 12345_f32),
-                                                                    Some(1000)),
-                                                          height_msl: (1000, Some(500)),
-                                                          height_ellipsoid: Some((900, Some(500))),
-                                                          gs: (10000, Some(100)),
-                                                          true_course: (123_f32, Some(2_f32)),
-                                                          quality: FixQuality::ThreeDim,
-                                                          num_sv: 4,
-                                                          mag_dec: Some((10_f32, Some(4_f32))),
-                                                      }),
-                                        }));
+            assert_eq!(
+                q[i],
+                SensorData::GNSS(GNSSData::TimeFix {
+                    time: Some(UTC.ymd(2014, 7, 8).and_hms(9, 10, 11)),
+                    fix: Some(Fix {
+                        lat_lon: ((12345_f32, 12345_f32), Some(1000)),
+                        height_msl: (1000, Some(500)),
+                        height_ellipsoid: Some((900, Some(500))),
+                        gs: (10000, Some(100)),
+                        true_course: (123_f32, Some(2_f32)),
+                        quality: FixQuality::ThreeDim,
+                        num_sv: 4,
+                        mag_dec: Some((10_f32, Some(4_f32))),
+                    }),
+                })
+            );
         }
     }
 }

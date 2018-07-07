@@ -17,9 +17,9 @@
 //! Maintains the traffic situation around us.
 
 use super::*;
-use std::time::Instant;
-use std::collections::HashMap;
 use sensor::SensorData;
+use std::collections::HashMap;
+use std::time::Instant;
 
 const CLEANUP_FREQ: f32 = 0.1;
 const MAX_STALE_SECS: u64 = 60;
@@ -99,11 +99,12 @@ pub struct Target {
 }
 
 impl Target {
-    pub fn new(addr: Address,
-               clock: Instant,
-               source: TrafficSource,
-               callsign: Option<String>)
-               -> Self {
+    pub fn new(
+        addr: Address,
+        clock: Instant,
+        source: TrafficSource,
+        callsign: Option<String>,
+    ) -> Self {
         Target {
             addr,
             altitude: None,
@@ -176,22 +177,22 @@ impl Processor for Traffic {
                     // got a traffic update, first figure out if we have some info
                     // about this guy already
 
-                    let trfc =
-                        self.situation
-                            .entry(t.addr.0)
-                            .or_insert(Target::new(t.addr,
-                                                   clock,
-                                                   t.source,
-                                                   icao_to_tail(t.addr.0)));
+                    let trfc = self.situation.entry(t.addr.0).or_insert(Target::new(
+                        t.addr,
+                        clock,
+                        t.source,
+                        icao_to_tail(t.addr.0),
+                    ));
                     // here, the callsign will be overwritten by codes below
                     // if it does exist
 
                     // optimization: if we are also receiving direct ADS-B transmission
                     // from the A/C but this update is ADS-R or TIS-B, ignore it.
-                    if (trfc.addr.1 == AddressType::ADSBICAO ||
-                        trfc.addr.1 == AddressType::ADSBOther) &&
-                       (t.addr.1 != AddressType::ADSBICAO && t.addr.1 != AddressType::ADSBOther) &&
-                       (clock - trfc.last_seen).as_secs() < ADS_B_LOCKOUT_INTERVAL {
+                    if (trfc.addr.1 == AddressType::ADSBICAO
+                        || trfc.addr.1 == AddressType::ADSBOther)
+                        && (t.addr.1 != AddressType::ADSBICAO && t.addr.1 != AddressType::ADSBOther)
+                        && (clock - trfc.last_seen).as_secs() < ADS_B_LOCKOUT_INTERVAL
+                    {
                         debug!("TIS-B or ADS-R traffic skipped in favor of ADS-B");
                         continue;
                     }

@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use processor::Report;
 use pitot::handle::Pushable;
+use processor::Report;
 use std::iter::Chain;
 use std::slice::Iter;
 

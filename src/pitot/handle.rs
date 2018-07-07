@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use time::{now_utc, Tm};
-use std::time::Instant;
 use std::collections::VecDeque;
+use std::time::Instant;
+use time::{now_utc, Tm};
 
 pub trait Handle {
     fn get_utc(&self) -> Tm;
@@ -59,15 +59,17 @@ impl BasicHandle {
 }
 
 pub struct PushableHandle<'a, H, D>
-    where D: 'a,
-          H: 'a + Handle
+where
+    D: 'a,
+    H: 'a + Handle,
 {
     handle: &'a mut H,
     queue: &'a mut VecDeque<D>,
 }
 
 impl<'a, H, D> Handle for PushableHandle<'a, H, D>
-    where H: 'a + Handle
+where
+    H: 'a + Handle,
 {
     fn get_utc(&self) -> Tm {
         self.handle.get_utc()
@@ -83,7 +85,8 @@ impl<'a, H, D> Handle for PushableHandle<'a, H, D>
 }
 
 impl<'a, H, D> Pushable<D> for PushableHandle<'a, H, D>
-    where H: 'a + Handle
+where
+    H: 'a + Handle,
 {
     fn push_data(&mut self, d: D) {
         self.queue.push_back(d);
@@ -91,7 +94,8 @@ impl<'a, H, D> Pushable<D> for PushableHandle<'a, H, D>
 }
 
 impl<'a, H, D> PushableHandle<'a, H, D>
-    where H: 'a + Handle
+where
+    H: 'a + Handle,
 {
     pub fn new(handle: &'a mut H, queue: &'a mut VecDeque<D>) -> Self {
         Self { handle, queue }

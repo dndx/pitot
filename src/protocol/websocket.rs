@@ -15,10 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use std::thread::{spawn, JoinHandle};
-use processor::Report::Ownship;
-use ws;
+use processor::Report::{Ownship, GNSS};
 use serde_json;
+use std::thread::{spawn, JoinHandle};
+use ws;
 
 pub struct WebSocket {
     ws_broadcaster: ws::Sender,
@@ -30,20 +30,20 @@ impl WebSocket {
         // spawn WS thread
 
         let socket = ws::WebSocket::new(|_| {
-            move |_| {
-                panic!("This server cannot receive messages, it only sends them.")
-            }
+            move |_| panic!("This server cannot receive messages, it only sends them.")
         }).expect("Unable to create WebSocket");
 
         let ws_broadcaster = socket.broadcaster();
 
-        let handle = spawn(move || { socket.listen(addr).expect("Unable to run WebSocket."); });
+        let handle = spawn(move || {
+            socket.listen(addr).expect("Unable to run WebSocket.");
+        });
         debug!("spawned WebSocket thread");
 
         Box::new(Self {
-                     _handle: handle,
-                     ws_broadcaster,
-                 })
+            _handle: handle,
+            ws_broadcaster,
+        })
     }
 }
 
@@ -54,6 +54,12 @@ impl Protocol for WebSocket {
                 Ownship(ref o) => {
                     let mut js = serde_json::to_value(o).unwrap();
                     js["type"] = "Ownship".into();
+
+                    self.ws_broadcaster.send(js.to_string()).unwrap();
+                }
+                GNSS(ref g) => {
+                    let mut js = serde_json::to_value(g).unwrap();
+                    js["type"] = "GNSS".into();
 
                     self.ws_broadcaster.send(js.to_string()).unwrap();
                 }

@@ -16,15 +16,15 @@
 
 pub mod handle;
 
-use std::collections::VecDeque;
-use std::time::{Duration, Instant};
-use std::thread::sleep;
-use sensor::SensorData;
-use sensor::Sensor;
+use self::handle::{BasicHandle, PushableHandle};
 use processor::{Processor, Report};
 use protocol::{Payload, Protocol};
+use sensor::Sensor;
+use sensor::SensorData;
+use std::collections::VecDeque;
+use std::thread::sleep;
+use std::time::{Duration, Instant};
 use transport::Transport;
-use self::handle::{PushableHandle, BasicHandle};
 
 pub struct Pitot {
     sensors: Vec<Box<Sensor>>,
@@ -84,8 +84,10 @@ impl Pitot {
 
         {
             let (first, second) = self.sensor_queue.as_slices();
-            debug!("total {} sensor message to process",
-                   self.sensor_queue.len());
+            debug!(
+                "total {} sensor message to process",
+                self.sensor_queue.len()
+            );
             trace!("{:?}", first);
             trace!("{:?}", second);
 
@@ -102,8 +104,10 @@ impl Pitot {
 
         {
             let (first, second) = self.report_queue.as_slices();
-            debug!("total {} report message to process",
-                   self.report_queue.len());
+            debug!(
+                "total {} report message to process",
+                self.report_queue.len()
+            );
             trace!("{:?}", first);
             trace!("{:?}", second);
 
@@ -118,8 +122,10 @@ impl Pitot {
     fn run_transports(&mut self) {
         {
             let (first, second) = self.payload_queue.as_slices();
-            debug!("total {} payload message to process",
-                   self.payload_queue.len());
+            debug!(
+                "total {} payload message to process",
+                self.payload_queue.len()
+            );
             trace!("{:?}", first);
             trace!("{:?}", second);
 

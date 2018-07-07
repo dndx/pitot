@@ -14,17 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::thread::{spawn, JoinHandle};
-use std::io::{self, Read};
-use std::sync::mpsc::{channel, Receiver};
-use std::f32::consts::PI;
+use super::bindings::libdump978::{Dump978, Frame, FrameType, Move};
 use super::bindings::librtlsdr::{get_device_count, get_device_info, Device, HWInfo};
-use super::bindings::libdump978::{Dump978, Frame, Move, FrameType};
+use super::*;
+use nom::shift;
+use pitot::handle::Pushable;
 use processor::fisb::FISBData;
 use sensor::{Sensor, SensorData};
-use pitot::handle::Pushable;
-use nom::shift;
-use super::*;
+use std::f32::consts::PI;
+use std::io::{self, Read};
+use std::sync::mpsc::{channel, Receiver};
+use std::thread::{spawn, JoinHandle};
 
 const TUNER_GAIN: i32 = 480;
 const SAMPLE_RATE: i32 = 2083334;
@@ -116,9 +116,9 @@ impl UAT {
                 });
 
                 return Some(UAT {
-                                _handle: handle,
-                                rx,
-                            });
+                    _handle: handle,
+                    rx,
+                });
             }
         }
 
@@ -130,15 +130,17 @@ impl UAT {
 
 fn parse_adsb_downlink(buf: &[u8]) -> TrafficData {
     let mut trfc = TrafficData {
-        addr: (((buf[1] as u32) << 16) | ((buf[2] as u32) << 8) | buf[3] as u32,
-               match buf[0] & 0x07 {
-                   0 => AddressType::ADSBICAO,
-                   1 => AddressType::ADSBOther,
-                   2 => AddressType::TISBICAO,
-                   3 => AddressType::TISBOther,
-                   6 => AddressType::ADSRICAO,
-                   _ => AddressType::Unknown,
-               }),
+        addr: (
+            ((buf[1] as u32) << 16) | ((buf[2] as u32) << 8) | buf[3] as u32,
+            match buf[0] & 0x07 {
+                0 => AddressType::ADSBICAO,
+                1 => AddressType::ADSBOther,
+                2 => AddressType::TISBICAO,
+                3 => AddressType::TISBOther,
+                6 => AddressType::ADSRICAO,
+                _ => AddressType::Unknown,
+            },
+        ),
         altitude: None,
         gnss_delta: None,
         heading: None,
@@ -214,8 +216,10 @@ fn parse_adsb_downlink(buf: &[u8]) -> TrafficData {
     }
 
     let raw_lat = (buf[4] as u32) << 15 | (buf[5] as u32) << 7 | buf[6] as u32 >> 1;
-    let raw_lon = ((buf[6] & 0x01) as u32) << 23 | (buf[7] as u32) << 15 | (buf[8] as u32) << 7 |
-                  buf[9] as u32 >> 1;
+    let raw_lon = ((buf[6] & 0x01) as u32) << 23
+        | (buf[7] as u32) << 15
+        | (buf[8] as u32) << 7
+        | buf[9] as u32 >> 1;
 
     if raw_lat != 0 && raw_lon != 0 {
         let mut lat = raw_lat as f32 * LAT_LON_RESOLUTION;
@@ -232,12 +236,14 @@ fn parse_adsb_downlink(buf: &[u8]) -> TrafficData {
 
     let raw_alt = (buf[10] as u16) << 4 | (buf[11] as u16 & 0xF0) >> 4;
     if raw_alt != 0 {
-        trfc.altitude = Some(((raw_alt as i32 - 1) * 25 - 1000,
-                              if buf[9] & 0x01 == 1 {
-                                  AltitudeType::GNSS
-                              } else {
-                                  AltitudeType::Baro
-                              }));
+        trfc.altitude = Some((
+            (raw_alt as i32 - 1) * 25 - 1000,
+            if buf[9] & 0x01 == 1 {
+                AltitudeType::GNSS
+            } else {
+                AltitudeType::Baro
+            },
+        ));
     }
 
     match (buf[12] >> 6) & 0x03 {
@@ -245,8 +251,8 @@ fn parse_adsb_downlink(buf: &[u8]) -> TrafficData {
             trfc.on_ground = Some(false);
 
             let raw_ns = (buf[12] as i16 & 0x1F) << 6 | (buf[13] as i16 & 0xFC) >> 2;
-            let raw_ew = (buf[13] as i16 & 0x03) << 9 | (buf[14] as i16) << 1 |
-                         (buf[15] as i16 & 0x80) >> 7;
+            let raw_ew =
+                (buf[13] as i16 & 0x03) << 9 | (buf[14] as i16) << 1 | (buf[15] as i16 & 0x80) >> 7;
 
             if raw_ns & 0x3FF != 0 && raw_ew & 0x3FF != 0 {
                 let mut ns_vel = (raw_ns & 0x3FF) as i32 - 1;
@@ -266,14 +272,16 @@ fn parse_adsb_downlink(buf: &[u8]) -> TrafficData {
                     ew_vel *= 4;
                 }
 
-                trfc.speed = Some((((ns_vel * ns_vel) as f32 + (ew_vel * ew_vel) as f32)
-                                       .sqrt()
-                                       .round() as u16,
-                                   SpeedType::GS));
+                trfc.speed = Some((
+                    ((ns_vel * ns_vel) as f32 + (ew_vel * ew_vel) as f32)
+                        .sqrt()
+                        .round() as u16,
+                    SpeedType::GS,
+                ));
                 if ns_vel != 0 || ew_vel != 0 {
-                    let trk = ((360 + 90 -
-                                (((ns_vel as f32).atan2(ew_vel as f32) * 180.0 / PI)
-                                     .round() as i16)) % 360) as u16;
+                    let trk = ((360 + 90
+                        - (((ns_vel as f32).atan2(ew_vel as f32) * 180.0 / PI).round() as i16))
+                        % 360) as u16;
                     trfc.heading = Some((trk, HeadingType::True));
                 }
             }
@@ -298,14 +306,17 @@ fn parse_adsb_downlink(buf: &[u8]) -> TrafficData {
                 trfc.speed = Some(((raw_gs & 0x3FF) - 1, SpeedType::GS));
             }
 
-            let raw_trk = ((buf[13] & 0x03) as u16) << 9 | (buf[14] as u16) << 1 |
-                          (buf[15] & 0x80) as u16 >> 7;
-            trfc.heading = Some((((raw_trk & 0x1FF) as f32 * TRACK_RESOLUTION).round() as u16,
-                                 match (raw_trk & 0x600) >> 9 {
-                                     1 | 3 => HeadingType::True,
-                                     2 => HeadingType::Mag,
-                                     _ => HeadingType::True, // assume true
-                                 }));
+            let raw_trk = ((buf[13] & 0x03) as u16) << 9
+                | (buf[14] as u16) << 1
+                | (buf[15] & 0x80) as u16 >> 7;
+            trfc.heading = Some((
+                ((raw_trk & 0x1FF) as f32 * TRACK_RESOLUTION).round() as u16,
+                match (raw_trk & 0x600) >> 9 {
+                    1 | 3 => HeadingType::True,
+                    2 => HeadingType::Mag,
+                    _ => HeadingType::True, // assume true
+                },
+            ));
         }
         st => warn!("unknown A/C status: {}", st),
     }
@@ -336,8 +347,10 @@ mod tests {
 
     #[test]
     fn test_parse_adsb_downlink() {
-        let payload = [11, 43, 3, 200, 53, 69, 117, 82, 61, 248, 8, 22, 16, 238, 31, 192, 17, 5,
-                       196, 230, 196, 230, 196, 10, 218, 130, 3, 0, 0, 0, 0, 0, 0, 0];
+        let payload = [
+            11, 43, 3, 200, 53, 69, 117, 82, 61, 248, 8, 22, 16, 238, 31, 192, 17, 5, 196, 230,
+            196, 230, 196, 10, 218, 130, 3, 0, 0, 0, 0, 0, 0, 0,
+        ];
         let exp = TrafficData {
             addr: (0x2B03C8, AddressType::TISBOther),
             altitude: Some((2200, AltitudeType::Baro)),
@@ -356,8 +369,10 @@ mod tests {
         };
         assert_eq!(parse_adsb_downlink(&payload), exp);
 
-        let payload = [8, 166, 98, 159, 46, 182, 45, 99, 174, 214, 28, 42, 0, 30, 44, 128, 24, 9,
-                       229, 187, 168, 230, 196, 6, 120, 160, 130, 0, 0, 28, 96, 0, 0, 0];
+        let payload = [
+            8, 166, 98, 159, 46, 182, 45, 99, 174, 214, 28, 42, 0, 30, 44, 128, 24, 9, 229, 187,
+            168, 230, 196, 6, 120, 160, 130, 0, 0, 28, 96, 0, 0, 0,
+        ];
         let exp = TrafficData {
             addr: (0xA6629F, AddressType::ADSBICAO),
             altitude: Some((10225, AltitudeType::Baro)),
@@ -376,8 +391,10 @@ mod tests {
         };
         assert_eq!(parse_adsb_downlink(&payload), exp);
 
-        let payload = [8, 165, 16, 171, 63, 198, 127, 123, 20, 102, 6, 169, 16, 168, 61, 160, 40,
-                       6, 229, 19, 93, 237, 45, 11, 230, 164, 192, 160, 0, 6, 224, 0, 0, 0];
+        let payload = [
+            8, 165, 16, 171, 63, 198, 127, 123, 20, 102, 6, 169, 16, 168, 61, 160, 40, 6, 229, 19,
+            93, 237, 45, 11, 230, 164, 192, 160, 0, 6, 224, 0, 0, 0,
+        ];
         let exp = TrafficData {
             addr: (0xA510AB, AddressType::ADSBICAO),
             altitude: Some((1625, AltitudeType::Baro)),
@@ -396,8 +413,10 @@ mod tests {
         };
         assert_eq!(parse_adsb_downlink(&payload), exp);
 
-        let payload = [10, 163, 166, 85, 63, 125, 231, 123, 194, 150, 7, 32, 1, 170, 10, 64, 223,
-                       9, 219, 19, 125, 68, 68, 8, 200, 145, 194, 160, 0, 7, 144, 0, 0, 0];
+        let payload = [
+            10, 163, 166, 85, 63, 125, 231, 123, 194, 150, 7, 32, 1, 170, 10, 64, 223, 9, 219, 19,
+            125, 68, 68, 8, 200, 145, 194, 160, 0, 7, 144, 0, 0, 0,
+        ];
         let exp = TrafficData {
             addr: (0xA3A655, AddressType::TISBICAO),
             altitude: Some((1825, AltitudeType::Baro)),
