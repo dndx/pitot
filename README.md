@@ -14,10 +14,10 @@ The software is still under heavy development and may not be feature complete
 and may contain bugs. Use at your own risk.
 
 # Latest release
-## pitot-v0.0.1-alpha3-debug.img.zip
-**Date released:** May 5, 2018
+## pitot-v0.0.1-alpha4-debug.img.zip
+**Date released:** Jul 15, 2018
 
-**Download Link:** https://github.com/dndx/pitot/releases/tag/v0.0.1-alpha3
+**Download Link:** https://github.com/dndx/pitot/releases/tag/v0.0.1-alpha4
 
 All Pitot releases are signed using Datong's PGP key
 [1908AE626BFCE242](https://pgp.mit.edu/pks/lookup?op=get&search=0x1908AE626BFCE242).
@@ -114,6 +114,10 @@ Pitot will **not** use the SDR at all unless it includes those strings (aka. no 
 
 For GNSS module, Pitot will detect whether your Ublox chip is running the 3.01 firmware
 and will enable Galileo constellation tracking automatically.
+
+# Web interface
+Pitot has a simple web interface that displays basic system and GNSS status information. It
+can be accessed via `http://192.168.0.1` once you are connected to the `Pitot` Wi-Fi.
 
 # Contributing
 Please check out [DEVELOPING.md](https://github.com/dndx/pitot/blob/master/DEVELOPING.md)
