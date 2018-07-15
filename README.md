@@ -74,8 +74,12 @@ necessary hardware for testing)
 * [SanDisk 16GB Micro SDHC card](https://www.amazon.com/SanDisk-Ultra-Micro-Adapter-SDSQUNC-016G-GN6MA/dp/B010Q57SEE)
 * [Stratux low power SDRs and antennas](https://www.amazon.com/gp/product/B01M7NMWCD)
 * [6000mAh pass-through charging battery pack](https://www.amazon.com/gp/product/B00ZWUZG70)
-* Any casing you like with calling fan ([Stratux case](https://www.amazon.com/gp/product/B072ND582W) works as well)
+* [3D printable case](https://www.thingiverse.com/thing:1489378)
 * [RY836AI WAAS enabled GPS with IMU and baro sensor](https://www.ebay.com/itm/182087516214)
+
+**Note:** You can use services like [makexyz](https://www.makexyz.com) to print your cases. The most
+important thing to remember is to use ABS as printing material and **not** PLA. As later will easily
+melt in high temperature conditions.
 
 # Getting started
 First, program your SD card using the [latest release image](https://github.com/dndx/pitot/releases).
