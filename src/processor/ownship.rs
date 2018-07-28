@@ -27,6 +27,10 @@ pub struct Ownship {
     pub lon: f32,
     /// Height above WGS-84 ellipsoid if available, otherwise MSL in ft
     pub altitude: i32,
+    /// Cabin pressure altitude in ft
+    pub pressure_altitude: Option<i32>,
+    /// Vertical speed
+    pub vs: Option<i32>,
     /// NIC
     pub nic: u8,
     /// NACp
@@ -69,6 +73,25 @@ impl Processor for Ownship {
                     self.track = f.true_course.0;
 
                     self.valid = true;
+
+                    handle.push_data(Report::Ownship(*self));
+                }
+                SensorData::Baro(b) => {
+                    let dt = 1_f32 / handle.get_frequency() as f32;
+                    let vs_update_pct = 5_f32 / (5_f32 + dt);
+
+                    if let Some(last_pres_alt) = self.pressure_altitude {
+                        self.vs = Some(if let Some(vs) = self.vs {
+                            (vs_update_pct * vs as f32
+                                + (1_f32 - vs_update_pct) * (b - last_pres_alt) as f32
+                                    / (dt / 60_f32))
+                                .round() as i32
+                        } else {
+                            0
+                        });
+                    }
+
+                    self.pressure_altitude = Some(b);
 
                     handle.push_data(Report::Ownship(*self));
                 }

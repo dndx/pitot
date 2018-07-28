@@ -60,6 +60,8 @@
                 $('#track').text(m.track.toFixed(0));
                 $('#nacp').text('(' + nacp[m.nacp] + ')');
                 $('#gs').text(m.gs.toFixed(0));
+                $('#vs').text(m.vs);
+                $('#pres_alt').text(m.pressure_altitude);
                 break;
         }
     };
