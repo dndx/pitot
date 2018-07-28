@@ -57,6 +57,8 @@ pub struct GDL90 {
     ownship_valid: bool,
     heartbeat_counter: u32,
     ownship_counter: u32,
+    /// true if Pressure altitude source exists
+    pres_alt_valid: bool,
 }
 
 impl Protocol for GDL90 {
@@ -73,13 +75,17 @@ impl Protocol for GDL90 {
                         self.ownship_counter = 0;
                         self.ownship_valid = o.valid;
 
+                        if o.pressure_altitude.is_some() {
+                            self.pres_alt_valid = true;
+                        }
+
                         handle.push_data(GDL90::generate_ownship(o));
                         handle.push_data(GDL90::generate_ownship_geometric_altitude(o));
                     }
                 }
                 Report::Traffic(ref o) => {
                     // throttle for Target type is done at traffic processor
-                    handle.push_data(GDL90::generate_traffic(o, clock));
+                    handle.push_data(GDL90::generate_traffic(o, clock, self.pres_alt_valid));
                 }
                 Report::FISB(ref o) => handle.push_data(GDL90::generate_uplink(o)),
                 _ => {}
@@ -215,11 +221,14 @@ impl GDL90 {
         buf[10] = lon3;
 
         // altitude
-        // let alt = alt_to_gdl90(e.altitude as f32);
-        // buf[11] = ((alt & 0xFF0) >> 4) as u8;
-        // buf[12] = (((alt & 0x00F) << 4) | 0x09) as u8; // Airborne + True Track
-        buf[11] = 0xFF;
-        buf[12] = 0xF9; // Airborne + True Track
+        if let Some(alt) = e.pressure_altitude {
+            let alt = alt_to_gdl90(alt as f32);
+            buf[11] = ((alt & 0xFF0) >> 4) as u8;
+            buf[12] = (((alt & 0x00F) << 4) | 0x09) as u8; // Airborne + True Track
+        } else {
+            buf[11] = 0xFF;
+            buf[12] = 0xF9; // Airborne + True Track
+        }
 
         buf[13] = (e.nic << 4) & 0xF0 | e.nacp & 0x0F;
 
@@ -245,7 +254,7 @@ impl GDL90 {
         }
     }
 
-    fn generate_traffic(e: &Target, clock: Instant) -> Payload {
+    fn generate_traffic(e: &Target, clock: Instant, pres_alt_valid: bool) -> Payload {
         let mut buf = [0_u8; 28 + 2]; // incl CRC field
 
         buf[0] = 0x14;
@@ -285,19 +294,25 @@ impl GDL90 {
         // altitude
         if let Some((alt, typ, i)) = e.altitude {
             if (clock - i).as_secs() <= MAX_STALE_SECS {
-                // GDL90 wants pres altitude, try to calculate it from GNSS altitude
-                // if correction is available
-
                 let mut corrected_alt = alt;
 
-                // Note: GDL90 wants pressure altitude here,
-                // but FF currently uses MSL altitude from
-                // ownship geometric report when calculating altitude
-                // difference, this is to correct Baro altitude
-                // to MSL so that the calculation will be as accurate as possible
-                if typ == AltitudeType::Baro {
+                // if ownship pressure altitude is NOT available, use MSL and attempt to correct it
+                // using GNSS delta if needed
+                if !pres_alt_valid && typ == AltitudeType::Baro {
+                    // GDL90 wants pres altitude, try to calculate it from GNSS altitude
+                    // if correction is available
+
+                    // Note: GDL90 wants pressure altitude here,
+                    // but FF currently uses MSL altitude from
+                    // ownship geometric report when calculating altitude
+                    // difference, this is to correct Baro altitude
+                    // to MSL so that the calculation will be as accurate as possible
                     if let Some(delta) = e.gnss_delta {
                         corrected_alt += delta;
+                    }
+                } else if pres_alt_valid && typ == AltitudeType::GNSS {
+                    if let Some(delta) = e.gnss_delta {
+                        corrected_alt -= delta;
                     }
                 }
 
@@ -444,6 +459,7 @@ impl GDL90 {
             ownship_valid: false,
             heartbeat_counter: 0,
             ownship_counter: 0,
+            pres_alt_valid: false,
         })
     }
 }
@@ -534,7 +550,7 @@ mod tests {
         trfc.nacp = Some(9);
         trfc.on_ground = Some(false);
 
-        let payload = GDL90::generate_traffic(&trfc, clock);
+        let payload = GDL90::generate_traffic(&trfc, clock, false);
         let expected = [
             0x7E, 0x14, 0x00, 0xA1, 0xB2, 0xC3, 0x1A, 0xD8, 0x3F, 0xA8, 0xDE, 0xAF, 0x23, 0xF9,
             0x79, 0x04, 0x2F, 0xF0, 0x57, 0x03, 'e' as u8, 'a' as u8, 'T' as u8, 'E' as u8,
@@ -543,12 +559,31 @@ mod tests {
 
         assert_eq!(payload.payload, &expected);
 
+        let payload = GDL90::generate_traffic(&trfc, clock, true);
+        let expected = [
+            0x7E, 0x14, 0x00, 0xA1, 0xB2, 0xC3, 0x1A, 0xD8, 0x3F, 0xA8, 0xDE, 0xAF, 0x21, 0x79,
+            0x79, 0x04, 0x2F, 0xF0, 0x57, 0x03, 'e' as u8, 'a' as u8, 'T' as u8, 'E' as u8,
+            'S' as u8, 'T' as u8, '1' as u8, '2' as u8, 0x00, 0xEA, 0xC4, 0x7E,
+        ];
+
+        assert_eq!(payload.payload, &expected);
+
         trfc.callsign = None;
-        let payload = GDL90::generate_traffic(&trfc, clock);
+        let payload = GDL90::generate_traffic(&trfc, clock, false);
         let expected = [
             0x7E, 0x14, 0x00, 0xA1, 0xB2, 0xC3, 0x1A, 0xD8, 0x3F, 0xA8, 0xDE, 0xAF, 0x23, 0xF9,
             0x79, 0x04, 0x2F, 0xF0, 0x57, 0x03, 'e' as u8, 'a' as u8, '0' as u8, '1' as u8,
             '2' as u8, '3' as u8, 0x00, 0x00, 0x00, 0x87, 0xEC, 0x7E,
+        ];
+
+        assert_eq!(payload.payload, &expected);
+
+        trfc.altitude = Some((12375, AltitudeType::GNSS, clock));
+        let payload = GDL90::generate_traffic(&trfc, clock, true);
+        let expected = [
+            0x7E, 0x14, 0x00, 0xA1, 0xB2, 0xC3, 0x1A, 0xD8, 0x3F, 0xA8, 0xDE, 0xAF, 0x1E, 0xF9,
+            0x79, 0x04, 0x2F, 0xF0, 0x57, 0x03, 'e' as u8, 'a' as u8, '0' as u8, '1' as u8,
+            '2' as u8, '3' as u8, 0x00, 0x00, 0x00, 0x12, 0x2D, 0x7E,
         ];
 
         assert_eq!(payload.payload, &expected);

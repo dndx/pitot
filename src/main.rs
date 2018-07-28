@@ -25,6 +25,9 @@ extern crate serde_json;
 extern crate time;
 #[macro_use]
 extern crate serde_derive;
+extern crate i2cdev_bmp280;
+extern crate i2csensors;
+extern crate i2cdev;
 extern crate icmp;
 extern crate inotify;
 extern crate libc;
@@ -49,6 +52,10 @@ fn main() {
 
     sensor::gnss::ublox::UbloxGNSSProvider::new().and_then(&mut |g| {
         p.link_sensor(g);
+        Some(())
+    });
+    sensor::barometer::bmp280::BMP280BaroProvider::new().and_then(&mut |b| {
+        p.link_sensor(b);
         Some(())
     });
     sensor::sdr::es::ES::new().and_then(&mut |e| {

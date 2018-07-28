@@ -14,27 +14,4 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-pub mod barometer;
-pub mod gnss;
-pub mod sdr;
-
-use self::sdr::TrafficData;
-
-use self::gnss::GNSSData;
-use pitot::handle::Pushable;
-use processor::fisb::FISBData;
-
-#[derive(PartialEq, Debug)]
-/// Represents data received from the sensor layer
-pub enum SensorData {
-    GNSS(GNSSData),
-    Traffic(TrafficData),
-    FISB(FISBData),
-    Baro(i32),
-}
-
-/// A type for representing a sensor
-pub trait Sensor {
-    /// Run the provider, may or may not yield any result
-    fn run(&mut self, h: &mut Pushable<SensorData>);
-}
+pub mod bmp280;
