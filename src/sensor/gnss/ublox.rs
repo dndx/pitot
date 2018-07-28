@@ -675,13 +675,13 @@ impl UbloxGNSSProvider {
                     0x01,
                     0x00, // SBAS = 2-3
                     0x02,
+                    0x04,
                     0x08,
-                    0x0E,
                     0x00,
                     0x00,
                     0x00,
                     0x01,
-                    0x00, // Galileo = 8-14, disabled
+                    0x00, // Galileo = 4-8, disabled
                     0x03,
                     0x00,
                     0x00,
