@@ -3,8 +3,8 @@
     var constellation = {
         "GPS": "🇺🇸",
         "SBAS": "SBAS ",
-        "Galileo": "🇷🇺",
-        "GLONASS": "🇪🇺",
+        "GLONASS": "🇷🇺",
+        "Galileo": "🇪🇺",
         "Unknown": "Unknown "
     }
 
