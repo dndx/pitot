@@ -155,7 +155,8 @@ impl GDL90 {
         buf[23] = 'o' as u8;
         buf[24] = 't' as u8;
 
-        buf[38] = 0x01; // geometric altitude datum = MSL
+        // datum is WGS-84 ellipsoid
+        buf[38] = 0x00;
 
         Payload {
             queueable: false,
@@ -185,7 +186,7 @@ impl GDL90 {
 
         buf[0] = 0x0B; // type = ownship geometric
 
-        let alt = (e.altitude / 5) as i16;
+        let alt = (e.hae_altitude / 5) as i16;
 
         buf[1] = (alt >> 8) as u8;
         buf[2] = (alt & 0x00FF) as u8;
@@ -238,7 +239,7 @@ impl GDL90 {
         buf[15] = (((gs & 0x00F) << 4) | ((vs & 0x0F00) >> 8)) as u8;
         buf[16] = (vs & 0xFF) as u8;
 
-        buf[17] = crs_to_gdl90(e.track);
+        buf[17] = crs_to_gdl90(e.true_track);
 
         buf[18] = 0x01; // Light (ICAO) < 15 500 lbs
 

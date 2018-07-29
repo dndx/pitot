@@ -403,7 +403,7 @@ fn fix_from_pvt(
                     Some(horizontal_accuracy),
                 ),
                 height_msl: (height_msl, Some(vertical_accuracy)),
-                height_ellipsoid: Some((height_ellipsoid, Some(vertical_accuracy))),
+                height_ellipsoid: (height_ellipsoid, Some(vertical_accuracy)),
                 gs: (gs as u32, Some(gs_accuracy)),
                 true_course: (hdg as f32 * 1.0e-5, Some(hdg_accuracy as f32 * 1.0e-5)),
                 quality: if fix_status & 0x02 != 0 {
@@ -913,7 +913,7 @@ mod tests {
                     fix: Some(Fix {
                         lat_lon: ((37.65518, -122.492645), Some(83757)),
                         height_msl: (16303, Some(468059)),
-                        height_ellipsoid: Some((-13707, Some(468059))),
+                        height_ellipsoid: (-13707, Some(468059)),
                         gs: (688, Some(3919)),
                         true_course: (0_f32, Some(180_f32)),
                         quality: FixQuality::ThreeDim,
@@ -941,7 +941,7 @@ mod tests {
                     fix: Some(Fix {
                         lat_lon: ((37.65518, -122.492645), Some(83757)),
                         height_msl: (16303, Some(468059)),
-                        height_ellipsoid: Some((-13707, Some(468059))),
+                        height_ellipsoid: (-13707, Some(468059)),
                         gs: (688, Some(3919)),
                         true_course: (0_f32, Some(180_f32)),
                         quality: FixQuality::SBAS,
