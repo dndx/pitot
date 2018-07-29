@@ -54,7 +54,7 @@ pub struct Fix {
     /// Height above MSL and accuracy in millimeters
     pub height_msl: Reading<i32, u32>,
     /// Height above ellipsoid and accuracy in millimeters
-    pub height_ellipsoid: OptionalReading<i32, u32>,
+    pub height_ellipsoid: Reading<i32, u32>,
     /// Ground speed and accuracy in millimeters per second
     pub gs: Reading<u32, u32>,
     /// True course and accuracy in degrees

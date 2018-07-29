@@ -25,8 +25,10 @@ pub struct Ownship {
     pub lat: f32,
     /// Longitude in deg
     pub lon: f32,
-    /// Height above WGS-84 ellipsoid if available, otherwise MSL in ft
-    pub altitude: i32,
+    /// MSL altitude in ft
+    pub msl_altitude: i32,
+    /// Height above WGS-84 ellipsoid in ft
+    pub hae_altitude: i32,
     /// Cabin pressure altitude in ft
     pub pressure_altitude: Option<i32>,
     /// Vertical speed
@@ -37,7 +39,8 @@ pub struct Ownship {
     pub nacp: u8,
     /// Ground speed in kts
     pub gs: f32,
-    pub track: f32,
+    /// True track in degrees
+    pub true_track: f32,
 }
 
 impl Processor for Ownship {
@@ -65,12 +68,12 @@ impl Processor for Ownship {
 
                     self.lat = (f.lat_lon.0).0;
                     self.lon = (f.lat_lon.0).1;
-                    // GDL90 says we should use height above ellipsoid
-                    // here, but most EFB displays as MSL
-                    self.altitude = mm_to_ft!(f.height_msl.0).round() as i32;
+
+                    self.msl_altitude = mm_to_ft!(f.height_msl.0).round() as i32;
+                    self.hae_altitude = mm_to_ft!(f.height_ellipsoid.0).round() as i32;
 
                     self.gs = mmps_to_kts!(f.gs.0);
-                    self.track = f.true_course.0;
+                    self.true_track = f.true_course.0;
 
                     self.valid = true;
 

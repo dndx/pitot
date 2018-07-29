@@ -27,7 +27,7 @@ impl Sensor for FakeGNSSProvider {
             fix: Some(Fix {
                 lat_lon: ((12345_f32, 12345_f32), Some(1000)),
                 height_msl: (1000, Some(500)),
-                height_ellipsoid: Some((900, Some(500))),
+                height_ellipsoid: (900, Some(500)),
                 gs: (10000, Some(100)),
                 true_course: (123_f32, Some(2_f32)),
                 quality: FixQuality::ThreeDim,
@@ -71,7 +71,7 @@ mod tests {
                     fix: Some(Fix {
                         lat_lon: ((12345_f32, 12345_f32), Some(1000)),
                         height_msl: (1000, Some(500)),
-                        height_ellipsoid: Some((900, Some(500))),
+                        height_ellipsoid: (900, Some(500)),
                         gs: (10000, Some(100)),
                         true_course: (123_f32, Some(2_f32)),
                         quality: FixQuality::ThreeDim,

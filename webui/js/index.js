@@ -56,8 +56,8 @@
             case "Ownship":
                 $('#lat').text(m.lat.toFixed(4));
                 $('#lon').text(m.lon.toFixed(4));
-                $('#alt').text(m.altitude);
-                $('#track').text(m.track.toFixed(0));
+                $('#msl_alt').text(m.msl_altitude);
+                $('#true_track').text(m.true_track.toFixed(0));
                 $('#nacp').text('(' + nacp[m.nacp] + ')');
                 $('#gs').text(m.gs.toFixed(0));
                 $('#vs').text(m.vs);
