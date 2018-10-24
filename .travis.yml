@@ -21,6 +21,6 @@ before_script:
   - cd $HOME/librtlsdr && mkdir build && cd build && cmake ../ -DCMAKE_INSTALL_PREFIX=$HOME/librtlsdr-build && make -j2 && make install
   - cd $HOME/dump1090 && git checkout libdump1090 && make -j2
   - cd $HOME/dump978 && git checkout libdump978 && make -j2
-  - export LIBRARY_PATH=$LIBRARY_PATH:$HOME/librtlsdr-build/lib:$HOME/dump1090:$HOME/dump978
-  - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/librtlsdr-build/lib:$HOME/dump1090:$HOME/dump978
+  - export LIBRARY_PATH=$HOME/librtlsdr-build/lib:$HOME/dump1090:$HOME/dump978
+  - export LD_LIBRARY_PATH=$HOME/librtlsdr-build/lib:$HOME/dump1090:$HOME/dump978
   - cd $TRAVIS_BUILD_DIR
