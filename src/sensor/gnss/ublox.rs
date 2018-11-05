@@ -24,11 +24,28 @@ use std::num::Wrapping;
 use std::time::Duration;
 use std::{str, thread, time};
 
-const SERIAL_PATH: [&str; 1] = ["/dev/ttyAMA0"];
+// A device that can be discovered by Pitot, with corresponding configuration
+// function and parser functions
+struct UBXDev {
+    dev: &'static str,
+    config_nav_sat: Option<fn(&mut UBXCommunicator) -> Result<(), Error>>,
+    parse_ubx_nav_pvt: fn(&[u8]) -> IResult<&[u8], GNSSData>,
+}
+
+// List of supported devices
+const SERIAL_PATH: [UBXDev; 2] = [
+    UBXDev {dev: "/dev/ttyAMA0",
+            config_nav_sat: Some(ublox8_config_nav_sat),
+            parse_ubx_nav_pvt: ublox8_parse_ubx_nav_pvt}, 
+    UBXDev {dev: "/dev/ublox7",
+            config_nav_sat: None,
+            parse_ubx_nav_pvt: ublox7_parse_ubx_nav_pvt}];
+
 const BAUD_RATE: BaudRate = BaudRate::Baud38400;
 
 pub struct UbloxGNSSProvider {
     comm: UBXCommunicator,
+    dev: &'static UBXDev,
 }
 
 #[derive(Debug, PartialEq)]
@@ -218,8 +235,24 @@ named!(
     )
 );
 
+// Ublox8 parsers and configs
+fn ublox8_config_nav_sat(comm: &mut UBXCommunicator) -> Result<(), Error> {
+    let payload = &[
+        0x01,
+        0x35, // NAV-SAT
+        0x00,
+        0x0A,
+        0x00,
+        0x00,
+        0x00,
+        0x00, // DDC, UART1, res, USB, I2C, res
+    ];
+    let packet = UBXPacket::new(0x06, 0x01, payload);
+    comm.write(&packet)
+}
+
 named!(
-    parse_ubx_nav_pvt<GNSSData>, // see p. 291
+    ublox8_parse_ubx_nav_pvt<GNSSData>, // see p. 291
     map!(
         do_parse!(
             take!(4) >> // skip iTOW
@@ -283,7 +316,7 @@ named!(
 );
 
 named!(
-    parse_ubx_nav_sat<GNSSData>, // see p. 296
+    ublox8_parse_ubx_nav_sat<GNSSData>, // see p. 296
     map!(
         do_parse!(
             take!(4) >> // skip iTOW
@@ -332,6 +365,68 @@ fn svinfo_from_protocol(data: (u8, u8, u8, i8, i16, u32)) -> SVStatus {
 fn sat_report_from_svinfo(data: Vec<SVStatus>) -> GNSSData {
     GNSSData::SatelliteInfo(data)
 }
+
+// Ublox7 parsers and configs
+named!(
+    ublox7_parse_ubx_nav_pvt<GNSSData>, // see p. 307
+    map!(
+        do_parse!(
+            take!(4) >> // skip iTOW
+            year: le_u16 >>
+            month: le_u8 >>
+            day: le_u8 >>
+            hour: le_u8 >>
+            min: le_u8 >>
+            sec: le_u8 >>
+            time_valid: le_u8 >>
+            take!(4) >> // skip time accuracy
+            take!(4) >> // nano sec
+            fix_type: le_u8 >>
+            fix_status: le_u8 >>
+            take!(1) >> // skip flags2 since nothing interesting is in there
+            num_sv: le_u8 >>
+            lon: le_i32 >>
+            lat: le_i32 >>
+            height_ellipsoid: le_i32 >>
+            height_msl: le_i32 >>
+            horizontal_accuracy: le_u32 >>
+            vertical_accuracy: le_u32 >>
+            take!(4) >> // skip NED north velocity
+            take!(4) >> // skip NED east velocity
+            take!(4) >> // skip NED down velocity
+            gs: le_i32 >>
+            hdg: le_i32 >>
+            gs_accuracy: le_u32 >>
+            hdg_accuracy: le_u32 >>
+            take!(2) >> // skip pDOP
+            take!(2) >> // skip reserved2
+            take!(4) >> // skip reserved3
+            (year,
+             month,
+             day,
+             hour,
+             min,
+             sec,
+             time_valid,
+             fix_type,
+             fix_status,
+             num_sv,
+             lon,
+             lat,
+             height_ellipsoid,
+             height_msl,
+             horizontal_accuracy,
+             vertical_accuracy,
+             gs,
+             hdg,
+             gs_accuracy,
+             hdg_accuracy,
+             0,
+             0)
+        ),
+        fix_from_pvt
+    )
+);
 
 fn fix_from_pvt(
     data: (
@@ -495,7 +590,7 @@ impl Sensor for UbloxGNSSProvider {
                     payload,
                 }) => {
                     // PVT
-                    let (rem, pvt) = parse_ubx_nav_pvt(payload).unwrap();
+                    let (rem, pvt) = (self.dev.parse_ubx_nav_pvt)(payload).unwrap();
                     debug_assert!(rem.len() == 0);
                     trace!("got PVT");
                     h.push_data(SensorData::GNSS(pvt))
@@ -506,7 +601,7 @@ impl Sensor for UbloxGNSSProvider {
                     payload,
                 }) => {
                     // SAT
-                    let (rem, sat) = parse_ubx_nav_sat(payload).unwrap();
+                    let (rem, sat) = ublox8_parse_ubx_nav_sat(payload).unwrap();
                     debug_assert!(rem.len() == 0);
                     trace!("got SAT");
                     h.push_data(SensorData::GNSS(sat))
@@ -528,13 +623,12 @@ impl Sensor for UbloxGNSSProvider {
 impl UbloxGNSSProvider {
     pub fn new() -> Option<Box<Sensor>> {
         for p in &SERIAL_PATH {
-            info!("trying port {}", p);
-            if let Ok(mut p) = serial::open(p) {
-                p.set_timeout(Duration::from_secs(1)).unwrap();
-                let mut p = UBXCommunicator::new(p, 1024);
-
-                p.serial
-                    .reconfigure(&|settings| {
+            let dev_str = p.dev;
+            info!("trying port {}", dev_str);
+            if let Ok(mut port) = serial::open(dev_str) {
+                port.set_timeout(Duration::from_secs(1)).unwrap();
+                // set to default baud rate
+                port.reconfigure(&|settings| {
                         try!(settings.set_baud_rate(BaudRate::Baud9600));
                         settings.set_char_size(serial::Bits8);
                         settings.set_parity(serial::ParityNone);
@@ -544,9 +638,9 @@ impl UbloxGNSSProvider {
                     })
                     .expect("could not configure baud rate");
 
-                // configure port
-                // first, set port baud rate
+                let mut comm = UBXCommunicator::new(port, 1024);
 
+                // configure port
                 let payload = &[
                     0x01, // portID
                     0x00, // reserved1
@@ -570,7 +664,7 @@ impl UbloxGNSSProvider {
                     0x00, // flags, padding
                 ];
                 let packet = UBXPacket::new(0x06, 0x00, payload);
-                if let Err(e) = p.write(&packet) {
+                if let Err(e) = comm.write(&packet) {
                     info!(
                         "serial port not responding, Ublox module is disabled: {:?}",
                         e
@@ -582,7 +676,7 @@ impl UbloxGNSSProvider {
                 // sleep 50ms to let RPi finishes transmitting
                 thread::sleep(time::Duration::from_millis(50));
 
-                p.serial
+                comm.serial
                     .reconfigure(&|settings| {
                         try!(settings.set_baud_rate(BAUD_RATE));
                         Ok(())
@@ -599,7 +693,7 @@ impl UbloxGNSSProvider {
                     0x00, // navRate = 1, timeRef = 1 (GPS)
                 ];
                 let packet = UBXPacket::new(0x06, 0x08, payload);
-                p.write(&packet).expect("could not configure update rate");
+                comm.write(&packet).expect("could not configure update rate");
 
                 // nav engine settings
                 let payload = &mut [0; 36];
@@ -608,14 +702,14 @@ impl UbloxGNSSProvider {
                 payload[2] = 0x07; // dyn = airborne with <2g acceleration
                 payload[3] = 0x02; // fixMode = 3D only
                 let packet = UBXPacket::new(0x06, 0x24, payload);
-                p.write(&packet).expect("could not configure update rate");
+                comm.write(&packet).expect("could not configure update rate");
 
                 // determine if Galileo is supported
                 let galileo_supported;
                 let packet = UBXPacket::new(0x0A, 0x04, &[]);
-                p.write(&packet).expect("could not pull version");
+                comm.write(&packet).expect("could not pull version");
                 loop {
-                    match p.next() {
+                    match comm.next() {
                         Ok(UBXPacket {
                             class: 0x0A,
                             id: 0x04,
@@ -637,9 +731,9 @@ impl UbloxGNSSProvider {
                 }
 
                 let packet = UBXPacket::new(0x06, 0x3E, &[]);
-                p.write(&packet).expect("could not pull GNSS configuration");
+                comm.write(&packet).expect("could not pull GNSS configuration");
                 loop {
-                    match p.next() {
+                    match comm.next() {
                         Ok(UBXPacket {
                             class: 0x06,
                             id: 0x3E,
@@ -653,7 +747,7 @@ impl UbloxGNSSProvider {
                 }
 
                 let payload = &mut [
-                    // see p. 164
+                    // see comm. 164
                     0x00,
                     0x00,
                     0xFF,
@@ -722,46 +816,37 @@ impl UbloxGNSSProvider {
                 }
 
                 let packet = UBXPacket::new(0x06, 0x3E, payload);
-                p.write(&packet).expect("could not configure GNSS");
+                comm.write(&packet).expect("could not configure GNSS");
 
                 // SBAS cfg
                 // enabled = true, usage = all, maxSBAS = 3, search all PRNs
                 let payload = &[0x01, 0x07, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00];
                 let packet = UBXPacket::new(0x06, 0x16, payload);
-                p.write(&packet).expect("could not configure SBAS");
+                comm.write(&packet).expect("could not configure SBAS");
 
                 // next, enable message (per 1 solution)
                 let payload = &[
-                    0x01,
-                    0x07, // NAV-PVT
-                    0x00,
-                    0x01,
-                    0x00,
-                    0x00,
-                    0x00,
-                    0x00, // DDC, UART1, res, USB, I2C, res
+                    0x01, // NAV-PVT
+                    0x07, //
+                    0x00, // DDC
+                    0x01, // UART1
+                    0x00, // res
+                    0x01, // USB
+                    0x00, // I2C
+                    0x00, // res
                 ];
                 let packet = UBXPacket::new(0x06, 0x01, payload);
-                p.write(&packet).expect("could not enable PVT message");
+                comm.write(&packet).expect("could not enable PVT message");
 
-                // next, enable SAT (satellite status reporting per 10 solution)
-                let payload = &[
-                    0x01,
-                    0x35, // NAV-SAT
-                    0x00,
-                    0x0A,
-                    0x00,
-                    0x00,
-                    0x00,
-                    0x00, // DDC, UART1, res, USB, I2C, res
-                ];
-                let packet = UBXPacket::new(0x06, 0x01, payload);
-                p.write(&packet).expect("could not enable SAT message");
+                // next, enable SAT (satellite status reporting per 10 solution) (ublox8+ only)
+                if p.config_nav_sat.is_some() {
+                    (p.config_nav_sat.unwrap())(&mut comm).expect("could not enable SAT message");
+                }
 
                 // make non-blocking
-                p.serial.set_timeout(Duration::from_secs(0)).unwrap();
+                comm.serial.set_timeout(Duration::from_secs(0)).unwrap();
 
-                return Some(Box::new(UbloxGNSSProvider { comm: p }));
+                return Some(Box::new(UbloxGNSSProvider { comm: comm, dev: p }));
             }
         }
 
@@ -887,7 +972,7 @@ mod tests {
             0, 128, 168, 18, 1, 15, 39, 0, 0, 248, 74, 35, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
         assert_eq!(
-            parse_ubx_nav_pvt(&payload),
+            ublox8_parse_ubx_nav_pvt(&payload),
             IResult::Done(
                 &[][..],
                 GNSSData::TimeFix {
@@ -905,7 +990,7 @@ mod tests {
             255,
         ];
         assert_eq!(
-            parse_ubx_nav_pvt(&payload),
+            ublox8_parse_ubx_nav_pvt(&payload),
             IResult::Done(
                 &[][..],
                 GNSSData::TimeFix {
@@ -924,6 +1009,33 @@ mod tests {
             )
         );
 
+        let payload = [
+            116, 148, 175, 6, 226, 7, 11, 5, 7, 9, 12, 7, 8, 0, 0, 0, 41, 32, 253, 5, 3, 3, 10, 9,
+            28, 27, 253, 182, 131, 185, 113, 22, 63, 204, 255, 255, 74, 64, 0, 0, 227, 8, 0, 0, 48, 12,
+            0, 0, 218, 255, 255, 255, 251, 255, 255, 255, 67, 0, 0, 0, 38, 0, 0, 0, 234, 7, 15, 2,
+            54, 2, 0, 0, 129, 233, 62, 0, 41, 1, 0, 0, 132, 211, 17, 0,
+        ];
+
+        assert_eq!(
+            ublox7_parse_ubx_nav_pvt(&payload),
+            IResult::Done(
+                &[][..],
+                GNSSData::TimeFix {
+                    time: Some(UTC.ymd(2018, 11, 5).and_hms(7, 9, 12)),
+                    fix: Some(Fix {
+                        lat_lon: ((37.65518, -122.492645), Some(2275)),
+                        height_msl: (16458, Some(3120)),
+                        height_ellipsoid: (-13249, Some(3120)),
+                        gs: (38, Some(566)),
+                        true_course: (345.39496_f32, Some(41.230087_f32)),
+                        quality: FixQuality::SBAS,
+                        num_sv: 9,
+                        mag_dec: None,
+                    }),
+                }
+            )
+        );
+
         // same as above, but SBAS flag is on and mac_dec = 10
         let payload = [
             148, 99, 86, 7, 225, 7, 5, 22, 10, 11, 24, 63, 60, 3, 0, 0, 88, 166, 244, 5, 3, 2, 6,
@@ -933,7 +1045,7 @@ mod tests {
             255,
         ];
         assert_eq!(
-            parse_ubx_nav_pvt(&payload),
+            ublox8_parse_ubx_nav_pvt(&payload),
             IResult::Done(
                 &[][..],
                 GNSSData::TimeFix {
@@ -957,7 +1069,7 @@ mod tests {
             0, 0, 17, 18, 0, 0, 6, 88, 12, 33, 20, 0, 0, 0, 44, 0, 1, 0,
         ];
         assert_eq!(
-            parse_ubx_nav_sat(&payload),
+            ublox8_parse_ubx_nav_sat(&payload),
             IResult::Done(
                 &[][..],
                 GNSSData::SatelliteInfo(vec![
